@@ -40,7 +40,17 @@
     color:var(--ink);
     overflow:hidden;
     background:var(--teal);
+    /* 日本語の禁則処理：行頭・行末の約物を整える */
+    line-break:strict;
+    word-break:normal;
+    overflow-wrap:break-word;
+    text-wrap:pretty;
   }
+  /* 見出し・本文：一文字だけ取り残さない／句読点のぶら下げ */
+  .ttl,.logo,.sub,.pname,.pdesc{text-wrap:balance;}
+  .intro p,.msg,.preset .pdesc,.panel p{text-wrap:pretty;line-break:strict;}
+  /* 文中で改行させたくない塊は <span class="nb"> で囲む */
+  .nb{white-space:nowrap;}
 
   /* ════════ 背景：ティール地 + コマ枠の世界 ════════ */
   #bg{position:fixed;inset:0;z-index:0;background:var(--teal);overflow:hidden;}
@@ -378,10 +388,10 @@ function renderIntro(){
       <span class="l3">エイリアン・ハント</span>
     </div>
     <div class="panel intro" style="margin-top:22px">
-      <p>どこかに <b>危険な宇宙人</b> が隠れている。可愛い顔して、見つけないと危ない。</p>
-      <p>自分の番は数回 <b>スキャン</b> できる。命中で発見！ 外れたら <b>一番近い宇宙人までの距離</b> だけが返る ── 方角はナゾ。</p>
-      <p>スキャンを使い切ったら端末を相手に渡す。先に相手の宇宙人を <b>ぜんぶ発見</b> したら勝ち。</p>
-      <p class="small">距離をたよりに居場所をしぼりこめ。あてずっぽうは時間のムダ。</p>
+      <p>この街のどこかに、<b>地球に忍び寄るエイリアン</b>がまぎれ込んだ。人の家にひそむヤツらを、あぶり出せ。</p>
+      <p>自分の番は数回<b>スキャン</b>できる。命中すれば発見！　外れたら<b>一番近いエイリアンまでの距離</b>だけが返る。方角はわからない。</p>
+      <p>スキャンを使い切ったら、端末を相手に渡す。先に相手のエイリアンを<b>ぜんぶ発見</b>したほうが勝ち。</p>
+      <p class="small">距離をたよりに、ひそむ場所をしぼりこめ。あてずっぽうは時間のムダだ。</p>
     </div>
     <button class="btn" style="margin-top:22px" id="start"><span>ゲーム設定へ</span></button>
   </div>`);
@@ -557,13 +567,14 @@ function fire(r,c){
     def.pings[k]={dists:detailed.map(x=>x.dist),nearest,scan:{r,c}};
     S.lastResult={kind:"ping",dist:minD,dists:detailed.map(x=>x.dist)};
   }
+  const found=def.aliens.filter(a=>def.hits[KEY(a.r,a.c)]).length;
+  // スキャン消費を先に反映してから描画（ダイヤの点灯ズレ防止）
+  if(found<ALIENS)S.pingsLeft--;
   renderPlay();
   if(hit)spark(r,c);
-  const found=def.aliens.filter(a=>def.hits[KEY(a.r,a.c)]).length;
   if(found>=ALIENS){S.winner=S.attacker;
     setTimeout(()=>{S.reveal=true;render();},550);
     setTimeout(()=>{S.phase="over";render();},2900);return;}
-  S.pingsLeft--;
   if(S.pingsLeft<=0){
     const delay=(S.lastResult&&S.lastResult.kind==="ping")?1200:700;
     setTimeout(()=>{S.nextAfterBlind="play";S.attacker=1-S.attacker;S.pingsLeft=PINGS;S.lastResult=null;S.phase="blind-play";render();},delay);
@@ -598,7 +609,7 @@ function renderOver(){
       <h1 class="ttl dark" style="font-size:26px">プレイヤー ${S.winner+1} の勝利</h1>
       <div class="sub" style="margin-top:6px">${t.name}</div>
       <p style="font-family:'Zilla Slab';font-size:16px;line-height:1.6;opacity:.8;margin-top:12px">
-        危険な宇宙人 ${ALIENS}体を ぜんぶ発見した。<br>銀河に平和がもどった。</p>
+        地球に忍び寄るエイリアン ${ALIENS}体を、ぜんぶ見つけ出した。<br>街に、いつもの平和がもどった。</p>
       <div style="display:flex;gap:10px;justify-content:center;margin-top:20px;flex-wrap:wrap">
         <button class="btn alt" id="again"><span>もっかい</span></button>
         <button class="btn ghost" id="reconf"><span>設定をかえる</span></button>
