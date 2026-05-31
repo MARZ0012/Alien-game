@@ -263,6 +263,12 @@
   .tag{font-family:'Anton';font-size:14px;letter-spacing:1px;color:var(--cream);
     background:var(--ink);padding:5px 14px 4px;display:inline-block;transform:skewX(-6deg);text-transform:uppercase;}
   .tag span{display:inline-block;transform:skewX(6deg);}
+  .best-line{margin-top:16px;font-family:'Zilla Slab';font-weight:700;font-size:16px;
+    color:var(--cream);text-shadow:1px 1px 0 var(--ink);text-align:center;letter-spacing:1px;}
+  .best-line b{font-family:'Anton';font-weight:400;color:var(--mustard);font-size:19px;margin-left:4px;}
+  /* ヒーロー：ステージ見出しの大型バッジ */
+  .stage-badge{font-family:'Anton';font-size:46px;color:var(--mustard);
+    -webkit-text-stroke:2px var(--ink);text-shadow:4px 4px 0 var(--ink);transform:skewX(-5deg);line-height:1;}
 </style>
 </head>
 <body>
@@ -320,6 +326,24 @@ const PRESETS=[
 ];
 let chosenPreset="m";
 function applyPreset(id){const p=PRESETS.find(x=>x.id===id)||PRESETS[1];SIZE=p.size;ALIENS=p.aliens;PINGS=p.aliens;chosenPreset=id;}
+
+/* ════════ ヒーローモード ════════
+   ステージごとに 盤面サイズ・エイリアン数・スキャン予算 を決める。
+   予算 = エイリアン数 × 係数。係数は序盤3.0倍→奥に進むほど2.0→1.5へ漸減。 */
+function heroStage(n){
+  // n: 1始まりのステージ番号
+  const size  = Math.min(5 + Math.floor((n-1)/2), 12);          // 5,5,6,6,7,7,8,8,9...上限12
+  const aliens= Math.min(2 + Math.floor((n-1)/2), 8);           // 2,2,3,3,4,4,5...上限8
+  // 係数：n=1で4.5、ステージごと0.1ずつ減らし下限2.0（序盤たっぷり→奥でじわじわ厳しく）
+  const coef  = Math.max(4.5 - (n-1)*0.1, 2.0);
+  const budget= Math.max(aliens+3, Math.round(aliens*coef));    // 最低でも命中数+3は保証
+  return {stage:n, size, aliens, budget, coef:Math.round(coef*10)/10};
+}
+
+/* ハイスコア（到達ステージ）の保存。GitHub配布の素のHTMLなので localStorage を使用 */
+const HERO_KEY="alienhunt_hero_best";
+function getHeroBest(){ try{return parseInt(localStorage.getItem(HERO_KEY)||"0",10)||0;}catch(e){return 0;} }
+function setHeroBest(v){ try{localStorage.setItem(HERO_KEY,String(v));}catch(e){} }
 
 /* チーム：①パレット内の2極 */
 const THEME=[
@@ -380,6 +404,8 @@ let S;
 function fresh(){return{phase:"intro",boards:[emptyBoard(),emptyBoard()],attacker:0,placeIdx:0,
   pingsLeft:PINGS,lastResult:null,winner:null,reveal:false,nextAfterBlind:null,
   turnNo:0,menuOpen:false,
+  mode:"vs",            // "vs"=2人対戦 / "hero"=ヒーローモード
+  stage:1,scanBudget:0,heroBoard:null,heroCleared:false,
   alienSeed:Math.floor(Math.random()*5)};}
 function emptyBoard(){return{aliens:[],hits:{},pings:{},alienType:{}};}
 
@@ -402,6 +428,10 @@ function render(){const ph=S.phase;
   else if(ph==="place")renderPlace();
   else if(ph==="play")renderPlay();
   else if(ph==="over")renderOver();
+  else if(ph==="hero-intro")renderHeroIntro();
+  else if(ph==="hero-play")renderHeroPlay();
+  else if(ph==="hero-clear")renderHeroClear();
+  else if(ph==="hero-over")renderHeroOver();
   renderChrome();
 }
 /* 共通UI：BACKボタン＋メニュー＋確認ダイアログ */
@@ -414,20 +444,27 @@ function renderChrome(){
   document.body.appendChild(back);
   if(!S.menuOpen)return;
   // 進行中（配置・スキャン）は誤操作防止の文言を強める
-  const midGame=(S.phase==="place"||S.phase==="play"||S.phase==="blind-place"||S.phase==="blind-play");
+  const midGame=(S.phase==="place"||S.phase==="play"||S.phase==="blind-place"||S.phase==="blind-play"||S.phase==="hero-play");
+  const isHero=(S.mode==="hero");
   const ovl=el(`<div id="menuovl">
     <div class="menu-card">
       <div class="tag" style="margin-bottom:14px"><span>メニュー</span></div>
-      ${midGame?`<p class="menu-note">ゲームの途中だよ。<br>もどると今の盤面はリセットされる。</p>`:``}
+      ${midGame?`<p class="menu-note">ゲームの途中だよ。<br>もどると今の${isHero?'挑戦':'盤面'}はリセットされる。</p>`:``}
       <button class="btn" id="m-home"><span>ホームへもどる</span></button>
-      <button class="btn alt" id="m-restart" style="margin-top:10px"><span>同じ設定でやり直す</span></button>
+      <button class="btn alt" id="m-restart" style="margin-top:10px"><span>${isHero?'STAGE 1からやり直す':'同じ設定でやり直す'}</span></button>
       <button class="btn ghost" id="m-cancel" style="margin-top:10px"><span>つづける</span></button>
     </div>
   </div>`);
   document.body.appendChild(ovl);
   ovl.querySelector("#m-cancel").onclick=()=>{S.menuOpen=false;render();};
-  ovl.querySelector("#m-home").onclick=()=>{S=fresh();S.phase="intro";render();};
-  ovl.querySelector("#m-restart").onclick=()=>{S=fresh();S.phase="place";S.placeIdx=0;render();};
+  ovl.querySelector("#m-home").onclick=()=>{
+    if(isHero&&S.stage-1>getHeroBest())setHeroBest(S.stage-1);
+    S=fresh();S.phase="intro";render();
+  };
+  ovl.querySelector("#m-restart").onclick=()=>{
+    if(isHero){startHero();}
+    else{S=fresh();S.phase="place";S.placeIdx=0;render();}
+  };
   ovl.addEventListener("click",e=>{if(e.target===ovl){S.menuOpen=false;render();}});
 }
 function el(html){const d=document.createElement("div");d.innerHTML=html.trim();return d.firstChild;}
@@ -441,16 +478,40 @@ function renderIntro(){
       <span class="l2">Alien Hunt</span>
       <span class="l3">エイリアン・ハント</span>
     </div>
-    <div class="panel intro" style="margin-top:22px">
+    <div class="panel intro" style="margin-top:20px">
       <p>この街のどこかに、<b>地球に忍び寄るエイリアン</b>がまぎれ込んだ。人の家にひそむヤツらを、あぶり出せ。</p>
-      <p>自分の番は数回<b>スキャン</b>できる。命中すれば発見！　外れたら<b>一番近いエイリアンまでの距離</b>だけが返る。方角はわからない。</p>
-      <p>スキャンを使い切ったら、端末を相手に渡す。先に相手のエイリアンを<b>ぜんぶ発見</b>したほうが勝ち。</p>
-      <p class="small">距離をたよりに、ひそむ場所をしぼりこめ。あてずっぽうは時間のムダだ。</p>
+      <p><b>スキャン</b>して命中すれば発見。外れたら<b>一番近いエイリアンまでの距離</b>だけが返る。方角はナゾ。距離をたよりにしぼりこめ。</p>
     </div>
-    <button class="btn" style="margin-top:22px" id="start"><span>ゲーム設定へ</span></button>
+    <button class="btn" style="margin-top:20px" id="start"><span>ふたりで対戦</span></button>
+    <button class="btn alt" style="margin-top:12px" id="hero"><span>ひとりでヒーローモード</span></button>
+    <div class="best-line" id="bestline"></div>
   </div>`);
   app.appendChild(s);
-  s.querySelector("#start").onclick=()=>{S.phase="setup";render();};
+  const best=getHeroBest();
+  if(best>0){ s.querySelector("#bestline").innerHTML=`ヒーロー最高記録：<b>STAGE ${best}</b>`; }
+  s.querySelector("#start").onclick=()=>{S.mode="vs";S.phase="setup";render();};
+  s.querySelector("#hero").onclick=()=>{startHero();};
+}
+
+/* ヒーローモード開始：ステージ1から */
+function startHero(){
+  S=fresh(); S.mode="hero"; S.stage=1;
+  loadHeroStage(1);
+  S.phase="hero-intro"; render();
+}
+/* ステージnの盤面を生成（ランダム配置）*/
+function loadHeroStage(n){
+  const st=heroStage(n);
+  SIZE=st.size; ALIENS=st.aliens; PINGS=st.budget;
+  S.stage=n; S.scanBudget=st.budget; S.pingsLeft=st.budget;
+  S.heroCleared=false; S.lastResult=null; S.reveal=false; S.turnNo=0;
+  const bd=emptyBoard();
+  // ランダムにALIENS体を重複なく配置
+  const cells=[]; for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++)cells.push({r,c});
+  for(let i=cells.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[cells[i],cells[j]]=[cells[j],cells[i]];}
+  bd.aliens=cells.slice(0,ALIENS);
+  bd.aliens.forEach((a,i)=>{bd.alienType[KEY(a.r,a.c)]=S.alienSeed+i;});
+  S.heroBoard=bd;
 }
 
 /* ロゴ/バッジ用：エイリアンの中身だけ（viewBox共有）*/
@@ -683,6 +744,157 @@ function renderOver(){
   app.appendChild(s);
   s.querySelector("#again").onclick=()=>{S=fresh();S.phase="place";render();};
   s.querySelector("#reconf").onclick=()=>{S=fresh();S.phase="setup";render();};
+}
+
+/* ════════ ヒーローモード画面 ════════ */
+function renderHeroIntro(){
+  const st=heroStage(S.stage);
+  app.innerHTML="";
+  const s=el(`<div class="screen center">
+    <div class="tag" style="margin-bottom:14px"><span>HERO MODE</span></div>
+    <div class="stage-badge">STAGE ${S.stage}</div>
+    <div class="panel" style="margin-top:20px">
+      <p style="font-family:'Zilla Slab';font-size:17px;font-weight:600;line-height:1.6;text-align:center">
+        ${st.size}×${st.size} の街に <b style="color:var(--red-d)">エイリアン ${st.aliens}体</b> がひそんでいる。<br>
+        <b style="color:var(--red-d)">スキャン ${st.budget}回</b> 以内に、ぜんぶ見つけ出せ。</p>
+      <p class="small" style="text-align:center;margin-top:8px">配置はランダム。予算を使い切るとゲームオーバー。</p>
+    </div>
+    <button class="btn" style="margin-top:22px" id="go"><span>スキャン開始</span></button>
+  </div>`);
+  app.appendChild(s);
+  s.querySelector("#go").onclick=()=>{S.phase="hero-play";render();};
+}
+
+function renderHeroPlay(){
+  const def=S.heroBoard;
+  const found=def.aliens.filter(a=>def.hits[KEY(a.r,a.c)]).length;
+  app.innerHTML="";
+  const s=el(`<div class="screen">
+    <div class="tag" style="margin:2px auto 6px;background:var(--mustard);color:var(--ink)"><span>STAGE ${S.stage}</span></div>
+    <h1 class="ttl" style="font-size:26px">エイリアンを探せ</h1>
+    <div class="hud">
+      <div class="stat"><div class="lbl">残りスキャン</div><div class="val" style="color:${S.pingsLeft<=2?'var(--red)':'var(--ink)'}">${S.pingsLeft}</div></div>
+      <div class="stat"><div class="lbl">発見</div><div class="val">${found} / ${ALIENS}</div></div>
+    </div>
+    <div class="grid-mat"><div class="grid" id="grid" style="grid-template-columns:repeat(${SIZE},1fr)"></div></div>
+    <div class="msg" id="msg"></div>
+    <div class="legend">
+      <div class="it"><span class="sw" style="background:#cf3f22;color:var(--cream)">1</span>すぐ近く</div>
+      <div class="it"><span class="sw" style="background:#e07a1e;color:var(--cream)">2</span>お！</div>
+      <div class="it"><span class="sw" style="background:#b87f18;color:var(--cream)">3</span>まぁまぁ</div>
+      <div class="it"><span class="sw" style="background:#0f2e2e;color:var(--cream)">4+</span>遠い</div>
+    </div>
+  </div>`);
+  app.appendChild(s);
+  const grid=s.querySelector("#grid");
+  for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++){
+    const k=KEY(r,c);const b=document.createElement("button");b.className="cell";
+    const isAlien=def.aliens.some(a=>a.r===r&&a.c===c);
+    if(def.hits[k]){
+      const isNew=S.lastResult&&S.lastResult.kind==="hit"&&S.lastResult.key===k;
+      b.classList.add("captured");if(isNew)b.classList.add("found");
+      b.innerHTML=alienSVG(def.alienType[k]??0);
+    }else if(S.reveal&&isAlien){
+      b.classList.add("captured","reveal");b.style.opacity=".96";b.innerHTML=alienSVG(def.alienType[k]??0);
+    }else if(def.pings[k]!==undefined){
+      b.classList.add("ping");
+      const pg=def.pings[k];const dists=pg.dists||[];const minD=dists[0];
+      // ヒーローは1人プレイ：得た情報はすべて残す（隠さない）
+      if(dists.length>1){
+        const dd=dists.map(d=>`<span style="background:${distColor(d)}"></span>`).join("");
+        b.innerHTML=`<div class="dist-wrap"><span class="dist" style="color:${distInk(minD)}">${minD}</span><div class="dist-dots">${dd}</div></div>`;
+      }else b.innerHTML=`<span class="dist" style="color:${distInk(minD)}">${minD}</span>`;
+    }else b.innerHTML=houseSVG();
+    if(!S.reveal&&!def.hits[k]&&def.pings[k]===undefined)b.onclick=()=>fireHero(r,c);
+    grid.appendChild(b);
+  }
+  const msg=s.querySelector("#msg");
+  if(S.lastResult){
+    if(S.lastResult.kind==="hit"){msg.className="msg found";msg.textContent="発見！ エイリアンを確保した";}
+    else{msg.className="msg";const dists=S.lastResult.dists||[S.lastResult.dist];
+      if(dists.length===1){msg.innerHTML=`スキャン応答 … 最も近いエイリアンまで <b style="font-size:22px;color:${distColor(dists[0])}">${dists[0]}</b>`;}
+      else{const col=dists.map(d=>`<b style="color:${distColor(d)};font-size:20px">${d}</b>`).join(" · ");msg.innerHTML=`スキャン応答 … 距離: ${col}`;}
+    }
+  }
+}
+
+function fireHero(r,c){
+  const def=S.heroBoard;const k=KEY(r,c);
+  if(def.hits[k]||def.pings[k]!==undefined||S.pingsLeft<=0)return;
+  const hit=def.aliens.find(a=>a.r===r&&a.c===c);
+  if(hit){def.hits[k]=true;refreshAffectedPings(def,k);S.lastResult={kind:"hit",key:k};}
+  else{
+    const alive=def.aliens.filter(a=>!def.hits[KEY(a.r,a.c)]);
+    const detailed=alive.map(a=>({key:KEY(a.r,a.c),dist:manhattan({r,c},a)})).sort((a,b)=>a.dist-b.dist);
+    const minD=detailed[0].dist;const nearest=detailed.filter(x=>x.dist===minD).map(x=>x.key);
+    def.pings[k]={dists:detailed.map(x=>x.dist),nearest,scan:{r,c},turn:S.turnNo};
+    S.lastResult={kind:"ping",dist:minD,dists:detailed.map(x=>x.dist)};
+  }
+  S.pingsLeft--;
+  renderHeroPlay();
+  if(hit)spark(r,c);
+  const found=def.aliens.filter(a=>def.hits[KEY(a.r,a.c)]).length;
+  if(found>=ALIENS){            // ステージクリア
+    S.heroCleared=true;
+    setTimeout(()=>{S.phase="hero-clear";render();},650);
+    return;
+  }
+  if(S.pingsLeft<=0){           // 予算切れ → ゲームオーバー
+    setTimeout(()=>{S.reveal=true;render();},400);
+    setTimeout(()=>{S.phase="hero-over";render();},2400);
+  }
+}
+
+function renderHeroClear(){
+  app.innerHTML="";
+  const next=S.stage+1;
+  const st=heroStage(next);
+  const usedBudget=S.scanBudget-S.pingsLeft;
+  const s=el(`<div class="screen center">
+    <svg class="emoji-badge pulse" viewBox="0 0 100 100">${alienInner(S.alienSeed)}</svg>
+    <div class="panel" style="margin-top:14px">
+      <div class="tag" style="margin-bottom:10px"><span>STAGE ${S.stage} クリア！</span></div>
+      <h1 class="ttl dark" style="font-size:24px">街を守った</h1>
+      <p style="font-family:'Zilla Slab';font-size:16px;line-height:1.6;opacity:.85;margin-top:10px">
+        ${ALIENS}体を ${usedBudget}スキャンで発見。<br>次は <b style="color:var(--red-d)">STAGE ${next}（${st.size}×${st.size}・${st.aliens}体・${st.budget}回）</b>。</p>
+      <div style="display:flex;gap:10px;justify-content:center;margin-top:18px;flex-wrap:wrap">
+        <button class="btn" id="next"><span>次のステージへ</span></button>
+        <button class="btn ghost" id="quit"><span>ここでやめる</span></button>
+      </div>
+    </div>
+  </div>`);
+  app.appendChild(s);
+  s.querySelector("#next").onclick=()=>{loadHeroStage(next);S.phase="hero-intro";render();};
+  s.querySelector("#quit").onclick=()=>{
+    if(S.stage>getHeroBest())setHeroBest(S.stage);
+    S=fresh();S.phase="intro";render();
+  };
+}
+
+function renderHeroOver(){
+  // 到達ステージ = クリアした最後のステージ。今のステージは未クリアなので stage-1。
+  const reached=S.stage-1;
+  const best=getHeroBest();
+  const isNewBest=reached>best;
+  if(isNewBest)setHeroBest(reached);
+  app.innerHTML="";
+  const s=el(`<div class="screen center">
+    <div class="emoji-badge pulse" style="font-family:'Anton';font-size:60px;color:var(--red);-webkit-text-stroke:2px var(--ink);display:flex;align-items:center;justify-content:center">!</div>
+    <div class="panel" style="margin-top:14px">
+      <div class="tag" style="margin-bottom:10px"><span>GAME OVER</span></div>
+      <h1 class="ttl dark" style="font-size:24px">スキャン切れ…</h1>
+      <p style="font-family:'Zilla Slab';font-size:16px;line-height:1.6;opacity:.85;margin-top:10px">
+        STAGE ${S.stage} で力尽きた。<br>到達ステージ：<b style="color:var(--red-d);font-size:20px">${reached}</b></p>
+      ${isNewBest&&reached>0?`<p class="menu-note" style="margin-top:10px;color:var(--red)">★ 自己ベスト更新！</p>`:`<p class="small" style="margin-top:8px">自己ベスト：STAGE ${Math.max(best,reached)}</p>`}
+      <div style="display:flex;gap:10px;justify-content:center;margin-top:18px;flex-wrap:wrap">
+        <button class="btn" id="retry"><span>STAGE 1からやり直す</span></button>
+        <button class="btn ghost" id="home"><span>ホームへ</span></button>
+      </div>
+    </div>
+  </div>`);
+  app.appendChild(s);
+  s.querySelector("#retry").onclick=()=>{startHero();};
+  s.querySelector("#home").onclick=()=>{S=fresh();S.phase="intro";render();};
 }
 
 /* ════════ 起動 ════════ */
