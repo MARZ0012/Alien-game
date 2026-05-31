@@ -329,15 +329,19 @@ function applyPreset(id){const p=PRESETS.find(x=>x.id===id)||PRESETS[1];SIZE=p.s
 
 /* ════════ ヒーローモード ════════
    ステージごとに 盤面サイズ・エイリアン数・スキャン予算 を決める。
-   予算 = エイリアン数 × 係数。係数は序盤3.0倍→奥に進むほど2.0→1.5へ漸減。 */
+   予算：Stage1=8、Stage2=10、Stage3-4=12、Stage5-6=14、Stage7以降は盤面切替ごとに+1 */
 function heroStage(n){
   // n: 1始まりのステージ番号
   const size  = Math.min(5 + Math.floor((n-1)/2), 12);          // 5,5,6,6,7,7,8,8,9...上限12
   const aliens= Math.min(2 + Math.floor((n-1)/2), 8);           // 2,2,3,3,4,4,5...上限8
-  // 係数：n=1で4.5、ステージごと0.1ずつ減らし下限2.0（序盤たっぷり→奥でじわじわ厳しく）
-  const coef  = Math.max(4.5 - (n-1)*0.1, 2.0);
-  const budget= Math.max(aliens+3, Math.round(aliens*coef));    // 最低でも命中数+3は保証
-  return {stage:n, size, aliens, budget, coef:Math.round(coef*10)/10};
+  // 予算：序盤は+2ずつ緩やかに慣れさせ、Stage7からは盤面切替ごと+1に締める
+  let budget;
+  if      (n === 1) budget = 8;
+  else if (n === 2) budget = 10;
+  else if (n <= 4)  budget = 12;
+  else if (n <= 6)  budget = 14;
+  else              budget = 14 + Math.floor((n - 5) / 2);      // 7-8:15, 9-10:16, 11-12:17…
+  return {stage:n, size, aliens, budget};
 }
 
 /* ハイスコア（到達ステージ）の保存。GitHub配布の素のHTMLなので localStorage を使用 */
@@ -488,7 +492,11 @@ function renderIntro(){
   </div>`);
   app.appendChild(s);
   const best=getHeroBest();
-  if(best>0){ s.querySelector("#bestline").innerHTML=`ヒーロー最高記録：<b>STAGE ${best}</b>`; }
+  if(best>0){
+    s.querySelector("#bestline").innerHTML=`🏆 ヒーローモード最高到達：<b>STAGE ${best}</b>`;
+  } else {
+    s.querySelector("#bestline").innerHTML=`ヒーローモードに挑戦しよう！`;
+  }
   s.querySelector("#start").onclick=()=>{S.mode="vs";S.phase="setup";render();};
   s.querySelector("#hero").onclick=()=>{startHero();};
 }
