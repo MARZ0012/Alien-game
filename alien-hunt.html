@@ -5,388 +5,466 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta name="theme-color" content="#f4ead6" />
+<meta name="theme-color" content="#3d8a8a" />
 <meta name="apple-mobile-web-app-title" content="ALIEN HUNT" />
 <title>ALIEN HUNT</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet" />
+<!-- ヴィンテージコミック見出し: Anton(極太) / 本文: Bebas寄りの濃いゴシックは避け、誌面感のある Archivo Black + Zilla -->
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo+Black&family=Zilla+Slab:wght@500;600;700&display=swap" rel="stylesheet" />
 <style>
   :root{
-    /* ── ENJOY パレット：層が溶け合う奇抜カラー ── */
-    --indigo:#3a1d6e;
-    --purple:#7b2d9e;
-    --magenta:#e0218a;
-    --rose:#ff3d77;
-    --orange:#ff8a1e;
-    --amber:#ffb627;
-    --lime:#b8e04a;
-    --teal:#16c2c2;
-    --ink:#f3e9ff;          /* 文字（明色）*/
-    --ink-dim:rgba(243,233,255,.62);
-    --glass:rgba(255,255,255,.10);
-    --glass-edge:rgba(255,255,255,.22);
-    --shadow:rgba(20,4,40,.45);
+    /* ── 画像①ヴィンテージコミック・パレット ── */
+    --teal:#3d8a8a;        /* 背景ティール */
+    --teal-d:#2c6868;
+    --teal-dd:#1f4d4d;
+    --red:#cf3f22;         /* 退色した朱赤 */
+    --red-d:#9a2c14;
+    --mustard:#e0a52e;     /* マスタード/黄土 */
+    --mustard-d:#b87f18;
+    --cream:#efe3c4;       /* 生成りクリーム（紙）*/
+    --cream-d:#ddcda3;
+    --ink:#23201c;         /* 主版の黒（少し茶味）*/
+    --ink-soft:#3a342c;
   }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;}
   html,body{height:100%;}
   body{
-    font-family:'Fredoka','Baloo 2',system-ui,sans-serif;
+    font-family:'Zilla Slab',Georgia,serif;
     color:var(--ink);
     overflow:hidden;
-    background:#23103f;
+    background:var(--teal);
   }
 
-  /* ── 有機シェイプ背景（シャープエッジ・フラット積層）── */
-  #bg{position:fixed;inset:0;z-index:0;overflow:hidden;background:#1a0d3d;}
-  #bg svg.waves{position:absolute;inset:-40px;width:calc(100% + 80px);height:calc(100% + 80px);filter:blur(22px);}
-  /* グレイン質感で安っぽさを消す */
-  #grain{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.07;mix-blend-mode:overlay;
-    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+  /* ════════ 背景：ティール地 + コマ枠の世界 ════════ */
+  #bg{position:fixed;inset:0;z-index:0;background:var(--teal);overflow:hidden;}
+  /* 背景のハーフトーン（うっすら）*/
+  #bg::before{content:"";position:absolute;inset:0;mix-blend-mode:multiply;opacity:.18;
+    background-image:radial-gradient(circle at center, var(--ink) 30%, transparent 34%);
+    background-size:9px 9px;}
+  /* 背景の斜め光線（①右上の構図）*/
+  #bg .rays{position:absolute;inset:0;opacity:.5;}
+
+  /* ════════ 古紙オーバーレイ（全面）：紙焼け・シミ・かすれ ════════ */
+  #age{position:fixed;inset:0;z-index:40;pointer-events:none;}
+  /* 四隅の焼け */
+  #age .burn{position:absolute;inset:0;mix-blend-mode:multiply;
+    background:
+      radial-gradient(130% 110% at 100% 0%, rgba(80,55,15,.40), transparent 50%),
+      radial-gradient(120% 110% at 0% 100%, rgba(70,48,12,.38), transparent 48%),
+      radial-gradient(150% 130% at 50% 45%, transparent 60%, rgba(50,32,8,.5));}
+  /* フォクシング（茶シミ）＋繊維グレイン */
+  #age .spots{position:absolute;inset:0;mix-blend-mode:multiply;opacity:.5;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='340' height='340'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.018 .02' numOctaves='5' seed='17'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 .32 0 0 0 0 .2 0 0 0 0 .05 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E");
+    background-size:340px 340px;}
+  /* 細かいインクのザラ＋擦れ（白く抜ける傷）*/
+  #age .scuff{position:absolute;inset:0;mix-blend-mode:overlay;opacity:.5;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150'%3E%3Cfilter id='s'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.7' numOctaves='2' seed='9'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .6 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23s)'/%3E%3C/svg%3E");
+    background-size:150px 150px;}
 
   #app{position:relative;z-index:2;height:100dvh;width:100%;
     display:flex;flex-direction:column;align-items:center;
-    padding:max(20px,env(safe-area-inset-top)) 18px max(24px,env(safe-area-inset-bottom));
+    padding:max(18px,env(safe-area-inset-top)) 16px max(22px,env(safe-area-inset-bottom));
     overflow-y:auto;}
 
-  /* ---- 共通パーツ ---- */
-  .title{
-    font-family:'Baloo 2',sans-serif;font-weight:800;
-    font-size:38px;letter-spacing:1px;line-height:.95;text-align:center;margin-top:6px;
-    color:#fff;
-    text-shadow:0 2px 24px var(--accent-glow,rgba(224,33,138,.6));
+  /* ════════ タイポ ════════ */
+  .logo{
+    font-family:'Anton',sans-serif;text-transform:uppercase;text-align:center;
+    line-height:.82;letter-spacing:1px;
+    position:relative;margin-top:4px;
   }
-  .sub{font-size:13px;font-weight:600;color:var(--ink-dim);letter-spacing:3px;text-transform:uppercase;text-align:center;margin-top:8px;}
+  .logo .l1{display:block;font-size:34px;color:var(--cream);
+    text-shadow:2px 2px 0 var(--ink); transform:skewX(-6deg);}
+  .logo .l2{display:block;font-size:62px;color:var(--red);
+    -webkit-text-stroke:3px var(--ink);
+    text-shadow:4px 4px 0 var(--ink), 5px 5px 0 var(--mustard);
+    transform:skewX(-6deg) rotate(-1.5deg);}
+  .logo .l3{display:block;font-family:'Zilla Slab';font-weight:700;font-size:15px;letter-spacing:6px;
+    color:var(--ink);margin-top:6px;}
+
+  .ttl{font-family:'Anton',sans-serif;text-transform:uppercase;letter-spacing:1px;text-align:center;
+    font-size:34px;color:var(--cream);text-shadow:3px 3px 0 var(--ink);transform:skewX(-5deg);}
+  .ttl.dark{color:var(--ink);text-shadow:2px 2px 0 var(--mustard);}
+  .sub{font-family:'Zilla Slab';font-weight:700;font-size:15px;letter-spacing:3px;text-transform:uppercase;
+    text-align:center;color:var(--ink);margin-top:8px;}
+
+  /* ════════ ボタン：コミックの吹き出し的ベタ＋黒太枠 ════════ */
   .btn{
-    font-family:'Baloo 2',sans-serif;font-weight:800;font-size:17px;letter-spacing:.5px;color:#fff;
-    border:none;border-radius:20px;padding:15px 36px;cursor:pointer;
-    background:var(--accent-grad,linear-gradient(135deg,#ff3d77,#ff8a1e));
-    box-shadow:0 8px 26px var(--accent-glow,rgba(255,61,119,.5)), inset 0 1px 0 rgba(255,255,255,.4);
-    transition:transform .1s, box-shadow .1s;
+    font-family:'Anton',sans-serif;font-size:20px;letter-spacing:1px;text-transform:uppercase;color:var(--cream);
+    border:3px solid var(--ink);border-radius:3px;padding:13px 34px;cursor:pointer;
+    background:var(--red);
+    box-shadow:4px 4px 0 var(--ink);
+    transition:transform .07s, box-shadow .07s;
+    transform:skewX(-5deg);position:relative;
   }
-  .btn:active{transform:scale(.96);}
-  .btn.ghost{background:var(--glass);backdrop-filter:blur(8px);border:1px solid var(--glass-edge);box-shadow:none;}
-  .btn:disabled{opacity:.4;filter:grayscale(.5);}
+  .btn span{display:inline-block;transform:skewX(5deg);}
+  .btn:active{transform:skewX(-5deg) translate(3px,3px);box-shadow:1px 1px 0 var(--ink);}
+  .btn.alt{background:var(--mustard);color:var(--ink);}
+  .btn.ghost{background:var(--teal-d);color:var(--cream);}
+  .btn:disabled{opacity:.5;filter:grayscale(.4);}
+  .btn:disabled:active{transform:skewX(-5deg);box-shadow:4px 4px 0 var(--ink);}
 
-  .screen{width:100%;max-width:430px;margin:0 auto;display:flex;flex-direction:column;align-items:center;flex:1;}
+  .screen{width:100%;max-width:440px;margin:0 auto;display:flex;flex-direction:column;align-items:center;flex:1;}
   .center{justify-content:center;}
-  .card{
-    background:var(--glass);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
-    border:1px solid var(--glass-edge);border-radius:28px;padding:26px 22px;
-    box-shadow:0 18px 50px var(--shadow), inset 0 1px 0 rgba(255,255,255,.18);
-    text-align:center;
-  }
 
-  /* ---- グリッドマット ---- */
-  .grid-mat{
-    width:100%;max-width:410px;
-    background:rgba(0,0,0,.52);
-    border-radius:20px;
-    padding:14px 12px 16px;
-    backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);
+  /* ════════ コミック・パネル（カード）════════ */
+  .panel{
+    background:var(--cream);
+    color:var(--ink);
+    border:3px solid var(--ink);
+    box-shadow:6px 6px 0 var(--ink);
+    padding:22px 20px;position:relative;overflow:hidden;
   }
-  .grid{display:grid;gap:4px;width:100%;max-width:392px;margin:0 auto;}
+  /* パネル内の紙ムラ＋うっすらハーフトーン */
+  .panel::before{content:"";position:absolute;inset:0;pointer-events:none;mix-blend-mode:multiply;opacity:.32;z-index:0;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='pn'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.025 .03' numOctaves='4' seed='6'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 .3 0 0 0 0 .19 0 0 0 0 .05 0 0 0 .45 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23pn)'/%3E%3C/svg%3E");}
+  .panel>*{position:relative;z-index:1;}
+  .panel .sub{color:var(--ink);opacity:.75;}
+
+  .intro p{font-family:'Zilla Slab';font-size:17px;line-height:1.5;margin-bottom:10px;text-align:left;font-weight:500;}
+  .intro b{font-weight:700;color:var(--red-d);}
+  .intro .small{font-size:14px;opacity:.6;}
+
+  /* ════════ グリッド（コミックのコマ）════════ */
+  .grid-mat{width:100%;max-width:410px;}
+  .grid{display:grid;gap:0;width:100%;max-width:404px;margin:0 auto;
+    background:var(--ink);border:4px solid var(--ink);
+    box-shadow:6px 6px 0 var(--ink);}
   .cell{
-    aspect-ratio:1;border-radius:8px;border:1px solid rgba(255,255,255,.10);cursor:pointer;
-    background:linear-gradient(145deg,rgba(255,255,255,.12),rgba(255,255,255,.03));
-    backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.18), 0 2px 6px rgba(20,4,40,.25);
+    aspect-ratio:1;border:1.5px solid var(--ink);cursor:pointer;
+    background:var(--cream);
     display:flex;align-items:center;justify-content:center;
-    font-family:'Baloo 2',sans-serif;font-weight:800;font-size:18px;
-    position:relative;transition:transform .1s, background .2s;color:#fff;
+    position:relative;transition:transform .07s;color:var(--ink);
     overflow:hidden;
   }
+  /* セル内の紙ムラ */
+  .cell::after{content:"";position:absolute;inset:0;pointer-events:none;mix-blend-mode:multiply;opacity:.3;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='70' height='70'%3E%3Cfilter id='cn'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.06 .07' numOctaves='3' seed='4'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 .3 0 0 0 0 .19 0 0 0 0 .05 0 0 0 .5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23cn)'/%3E%3C/svg%3E");
+    background-size:70px 70px;z-index:1;}
   .cell:active{transform:scale(.93);}
-  .cell.ship{border-color:rgba(255,255,255,.4);box-shadow:0 6px 22px var(--accent-glow,rgba(255,61,119,.5)),inset 0 1px 0 rgba(255,255,255,.35);}
-  .cell .alien{width:82%;height:82%;filter:drop-shadow(0 3px 6px rgba(20,4,40,.4));}
-  .cell.found{animation:found .6s cubic-bezier(.34,1.7,.5,1) both;}
+  .cell .alien{width:92%;height:92%;position:relative;z-index:2;}
+  .cell .house{width:54%;height:54%;position:relative;z-index:2;}
+  .cell.found{animation:found .55s cubic-bezier(.34,1.7,.5,1) both;}
   .cell.reveal{animation:revealPop .5s cubic-bezier(.34,1.7,.5,1) both;}
-  .cell.ping{background:linear-gradient(145deg,rgba(255,255,255,.18),rgba(255,255,255,.05));}
-  /* 複数距離インジケーター */
-  .cell .dist-wrap{display:flex;flex-direction:column;align-items:center;gap:1px;width:100%;}
-  .cell .dist{font-size:17px;text-shadow:0 1px 8px currentColor;line-height:1;}
+  /* スキャン済み：マスタード地に網点（応答済みの紙）*/
+  .cell.ping{background:var(--mustard);}
+  .cell.ping::after{opacity:.5;mix-blend-mode:multiply;
+    background-image:radial-gradient(circle at center, var(--ink) 26%, transparent 30%);
+    background-size:6px 6px;}
+  /* 距離表示 */
+  .cell .dist-wrap{display:flex;flex-direction:column;align-items:center;gap:0;width:100%;z-index:3;position:relative;}
+  .cell .dist{font-family:'Anton',sans-serif;font-size:21px;line-height:.9;color:var(--ink);}
   .cell .dist-dots{display:flex;gap:2px;justify-content:center;margin-top:1px;}
-  .cell .dist-dots span{width:5px;height:5px;border-radius:50%;opacity:.85;}
-  .cell.myship{background:var(--accent-grad);border-color:rgba(255,255,255,.5);box-shadow:0 6px 22px var(--accent-glow),inset 0 1px 0 rgba(255,255,255,.4);}
-  /* 家アイコン（未スキャン） */
-  .cell .house{width:52%;height:52%;opacity:.38;}
-  /* 配置フェーズの選択済みエイリアンセル */
-  .cell.placed-alien{background:var(--accent-grad);border-color:rgba(255,255,255,.5);box-shadow:0 4px 14px var(--accent-glow),inset 0 1px 0 rgba(255,255,255,.4);}
+  .cell .dist-dots span{width:5px;height:5px;border-radius:50%;border:1.5px solid var(--ink);}
+  /* 配置済みエイリアンセル */
+  .cell.placed-alien{background:var(--red);}
 
-  @keyframes found{0%{transform:scale(.2) rotate(-25deg);}55%{transform:scale(1.28) rotate(8deg);}100%{transform:scale(1) rotate(0);}}
-  @keyframes revealPop{0%{transform:scale(.3);opacity:0;}60%{transform:scale(1.2);opacity:1;}100%{transform:scale(1);opacity:1;}}
+  @keyframes found{0%{transform:scale(.2) rotate(-22deg);}55%{transform:scale(1.22) rotate(7deg);}100%{transform:scale(1) rotate(0);}}
+  @keyframes revealPop{0%{transform:scale(.3);opacity:0;}60%{transform:scale(1.16);opacity:1;}100%{transform:scale(1);opacity:1;}}
 
-  .burst{position:absolute;inset:0;pointer-events:none;border-radius:17px;overflow:visible;}
-  .burst span{position:absolute;left:50%;top:50%;width:8px;height:8px;border-radius:50%;
-    background:#fff;box-shadow:0 0 10px var(--lime);transform:translate(-50%,-50%);
-    animation:spark .65s ease-out forwards;}
-  @keyframes spark{0%{opacity:1;transform:translate(-50%,-50%) scale(1);}
-    100%{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(.3);}}
+  .burst{position:absolute;inset:0;pointer-events:none;overflow:visible;z-index:4;}
+  .burst span{position:absolute;left:50%;top:50%;width:8px;height:8px;
+    background:var(--mustard);border:1.5px solid var(--ink);transform:translate(-50%,-50%) rotate(45deg);
+    animation:spark .6s ease-out forwards;}
+  @keyframes spark{0%{opacity:1;transform:translate(-50%,-50%) scale(1) rotate(45deg);}
+    100%{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(.3) rotate(45deg);}}
 
-  /* ---- HUD ---- */
-  .hud{display:flex;gap:14px;justify-content:center;margin:14px 0 12px;flex-wrap:wrap;}
-  .stat{background:var(--glass);backdrop-filter:blur(10px);border:1px solid var(--glass-edge);
-    border-radius:16px;padding:8px 18px;box-shadow:0 8px 20px var(--shadow);text-align:center;min-width:104px;}
-  .stat .lbl{font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--ink-dim);text-transform:uppercase;}
-  .stat .val{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:20px;color:#fff;margin-top:2px;}
-  .pip{display:inline-block;width:14px;height:14px;border-radius:50%;margin:0 2px;
-    background:var(--accent-grad);box-shadow:0 0 8px var(--accent-glow);}
-  .pip.spent{background:rgba(255,255,255,.18);box-shadow:none;}
+  /* ════════ HUD ════════ */
+  .hud{display:flex;gap:12px;justify-content:center;margin:14px 0 12px;flex-wrap:wrap;}
+  .stat{background:var(--cream);color:var(--ink);border:3px solid var(--ink);
+    padding:6px 16px;box-shadow:3px 3px 0 var(--ink);text-align:center;min-width:118px;}
+  .stat .lbl{font-family:'Zilla Slab';font-size:12px;font-weight:700;letter-spacing:1px;opacity:.65;text-transform:uppercase;}
+  .stat .val{font-family:'Anton',sans-serif;font-size:21px;margin-top:2px;}
+  .pip{display:inline-block;width:15px;height:15px;margin:0 2px;transform:rotate(45deg);
+    background:var(--red);border:2px solid var(--ink);vertical-align:middle;}
+  .pip.spent{background:transparent;}
 
-  .msg{min-height:38px;text-align:center;margin-top:14px;font-size:15px;font-weight:600;color:var(--ink);}
-  .msg.found{font-weight:800;font-size:17px;color:#fff;text-shadow:0 0 18px var(--lime);}
+  .msg{min-height:36px;text-align:center;margin-top:12px;font-family:'Zilla Slab';font-size:17px;font-weight:600;color:var(--cream);
+    text-shadow:1px 1px 0 var(--ink);}
+  .msg b{font-family:'Anton';font-weight:400;}
+  .msg.found{font-size:20px;color:var(--mustard);}
 
-  .legend{display:flex;gap:8px;justify-content:center;margin-top:18px;flex-wrap:wrap;}
-  .legend .it{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--ink-dim);}
-  .legend .sw{width:21px;height:21px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.3);}
+  .legend{display:flex;gap:10px;justify-content:center;margin-top:16px;flex-wrap:wrap;}
+  .legend .it{display:flex;align-items:center;gap:5px;font-family:'Zilla Slab';font-size:14px;font-weight:600;color:var(--cream);text-shadow:1px 1px 0 var(--ink);}
+  .legend .sw{width:24px;height:24px;display:flex;align-items:center;justify-content:center;
+    font-family:'Anton';font-size:13px;color:var(--ink);border:2px solid var(--ink);}
 
-  .intro p{font-size:14.5px;line-height:1.75;margin-bottom:12px;text-align:left;font-weight:500;color:var(--ink);}
-  .intro b{font-weight:800;color:#fff;}
-  .emoji{font-size:60px;line-height:1;filter:drop-shadow(0 6px 18px rgba(20,4,40,.5));}
-  .pulse-emoji{animation:bob 1.6s ease-in-out infinite;}
-  @keyframes bob{0%,100%{transform:translateY(0);}50%{transform:translateY(-9px);}}
+  .emoji-badge{width:84px;height:84px;}
+  .pulse{animation:bob 1.8s ease-in-out infinite;}
+  @keyframes bob{0%,100%{transform:translateY(0) rotate(-2deg);}50%{transform:translateY(-8px) rotate(2deg);}}
 
-  .blind-aliens{display:flex;gap:8px;justify-content:center;margin:8px 0 16px;}
-  .blind-aliens svg{width:48px;height:48px;animation:bob 1.6s ease-in-out infinite;filter:drop-shadow(0 4px 10px rgba(20,4,40,.5));}
+  .blind-aliens{display:flex;gap:10px;justify-content:center;margin:10px 0 14px;}
+  .blind-aliens svg{width:54px;height:54px;animation:bob 1.8s ease-in-out infinite;}
   .blind-aliens svg:nth-child(2){animation-delay:.2s;}
   .blind-aliens svg:nth-child(3){animation-delay:.4s;}
 
-  /* ENJOY 風の極太半透明タイポを intro 背面に */
-  .ghost-type{position:fixed;z-index:1;left:50%;top:48%;transform:translate(-50%,-50%) rotate(-4deg);
-    font-family:'Baloo 2',sans-serif;font-weight:800;font-size:30vmax;line-height:.8;
-    color:rgba(255,255,255,.05);pointer-events:none;letter-spacing:-2vmax;white-space:nowrap;}
+  /* ════════ プリセット ════════ */
+  .preset-grid{display:flex;flex-direction:column;gap:11px;width:100%;margin-top:6px;}
+  .preset{
+    background:var(--cream);color:var(--ink);border:3px solid var(--ink);
+    padding:12px 16px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:14px;
+    box-shadow:4px 4px 0 var(--ink);transition:transform .07s,box-shadow .07s;position:relative;overflow:hidden;
+  }
+  .preset::after{content:"";position:absolute;inset:0;pointer-events:none;mix-blend-mode:multiply;opacity:.25;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='pp'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.04' numOctaves='3' seed='3'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 .3 0 0 0 0 .19 0 0 0 0 .05 0 0 0 .4 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23pp)'/%3E%3C/svg%3E");}
+  .preset:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink);}
+  .preset.sel{background:var(--mustard);box-shadow:4px 4px 0 var(--red-d);}
+  .preset .mini{flex:0 0 auto;display:grid;gap:2px;padding:4px;background:var(--ink);position:relative;z-index:1;}
+  .preset .mini i{width:6px;height:6px;background:var(--cream);display:block;}
+  .preset .mini i.on{background:var(--red);}
+  .preset.sel .mini i.on{background:var(--ink);}
+  .preset .pinfo{flex:1;position:relative;z-index:1;}
+  .preset .pname{font-family:'Anton';font-size:18px;letter-spacing:.5px;}
+  .preset .pdesc{font-family:'Zilla Slab';font-size:14px;font-weight:500;opacity:.7;margin-top:1px;}
+
+  .tag{font-family:'Anton';font-size:14px;letter-spacing:1px;color:var(--cream);
+    background:var(--ink);padding:5px 14px 4px;display:inline-block;transform:skewX(-6deg);text-transform:uppercase;}
+  .tag span{display:inline-block;transform:skewX(6deg);}
 </style>
 </head>
 <body>
+<!-- ════════ 版画用グローバルSVGフィルター＆パターン ════════ -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- 手描きの線の揺れ（軽）-->
+    <filter id="rough" x="-15%" y="-15%" width="130%" height="130%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="3" seed="4" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+    </filter>
+    <!-- 手描きの線の揺れ（強・大きい絵用）-->
+    <filter id="rough-2" x="-15%" y="-15%" width="130%" height="130%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.022" numOctaves="3" seed="11" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="4"/>
+    </filter>
+    <!-- ハーフトーン（影用ドット）-->
+    <pattern id="ht" width="5.5" height="5.5" patternUnits="userSpaceOnUse">
+      <circle cx="2.75" cy="2.75" r="1.5" fill="#23201c" opacity="0.5"/>
+    </pattern>
+    <pattern id="ht-dense" width="5" height="5" patternUnits="userSpaceOnUse">
+      <circle cx="2.5" cy="2.5" r="1.8" fill="#23201c" opacity="0.55"/>
+    </pattern>
+  </defs>
+</svg>
+
 <div id="bg">
-  <svg class="waves" viewBox="0 0 390 844" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
-    <!-- ベース -->
-    <rect width="390" height="844" fill="#0d1e2e"/>
-
-    <!-- ターコイズ：左上〜中央、大きく主役級 -->
-    <path d="M-30 -20 C80 -20 200 40 220 160 C240 270 180 370 100 400 C20 430 -30 380 -30 300Z" fill="#0acfcf" opacity="0.88"/>
-
-    <!-- エメラルド：右中〜下、広い面積 -->
-    <path d="M200 300 C290 260 410 300 420 440 C430 560 360 660 270 680 C180 700 130 630 150 520 C165 430 200 300 200 300Z" fill="#0aaa6a" opacity="0.85"/>
-
-    <!-- パープル：左中〜左下 -->
-    <path d="M-30 280 C50 230 160 250 190 340 C215 415 180 510 100 540 C20 570 -30 510 -30 430Z" fill="#6b18b0" opacity="0.88"/>
-
-    <!-- マゼンタ：右上、抑えめ -->
-    <path d="M240 -20 C320 -20 420 50 410 170 C400 260 330 300 270 270 C210 240 200 160 230 90Z" fill="#c8188a" opacity="0.78"/>
-
-    <!-- オレンジ：上部中央、小〜中 -->
-    <path d="M120 -20 C190 -20 270 30 280 120 C290 200 240 260 180 250 C120 240 90 180 100 110Z" fill="#f07818" opacity="0.80"/>
-
-    <!-- ターコイズ2：下部左、エメとつなぐ -->
-    <path d="M-30 580 C50 530 160 550 200 640 C235 720 200 820 120 840 C50 855 -30 810 -30 740Z" fill="#10c8b8" opacity="0.80"/>
-
-    <!-- エメラルド2：右下コーナー -->
-    <path d="M290 680 C360 640 430 690 430 780 C430 844 370 844 290 844 C220 844 200 800 230 750Z" fill="#08c870" opacity="0.75"/>
-
-    <!-- ディープパープル：下部中央、締め -->
-    <path d="M60 700 C130 660 240 680 270 770 C290 830 250 844 180 844 C110 844 50 820 50 770Z" fill="#4a10a0" opacity="0.82"/>
-
-    <!-- ローズ：中央やや右、小さめアクセント -->
-    <path d="M240 380 C300 340 370 370 380 450 C390 520 340 570 280 560 C220 550 200 490 220 440Z" fill="#e02870" opacity="0.70"/>
+  <svg class="rays" viewBox="0 0 390 844" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+    <!-- ①右上のような放射状の色面 -->
+    <polygon points="390,0 200,0 390,260" fill="#cf3f22" opacity="0.5"/>
+    <polygon points="0,844 0,640 230,844" fill="#e0a52e" opacity="0.45"/>
+    <polygon points="390,844 390,700 250,844" fill="#2c6868" opacity="0.6"/>
   </svg>
 </div>
-<div id="grain"></div>
+<div id="age"><div class="burn"></div><div class="spots"></div><div class="scuff"></div></div>
 <div id="app"></div>
 
 <script>
 /* ════════════════════════════════════════════════════
-   ALIEN HUNT  —  pass & play / 単一HTML
-   7×7 / 宇宙人3体 / 1ターン3連射 / 距離ヒント(マンハッタン)
-   先に相手の宇宙人3体を全部発見した方の勝ち
+   ALIEN HUNT — pass & play / 単一HTML
+   ヴィンテージコミック・スタイル（参考①）
+   盤面サイズ・エイリアン数=プリセット可変 / PINGS=ALIENS
    ════════════════════════════════════════════════════ */
 
-const SIZE = 7, ALIENS = 3, PINGS = 3;
-const KEY = (r,c)=>r+","+c;
+const KEY=(r,c)=>r+","+c;
 const manhattan=(a,b)=>Math.abs(a.r-b.r)+Math.abs(a.c-b.c);
 
-// チームごとのアイデンティティ（ENJOYパレットから抽出した2極）
+let SIZE=7, ALIENS=3, PINGS=3;
+
+const PRESETS=[
+  {id:"s",size:5, aliens:2,name:"クイック",    desc:"5×5 ・ 宇宙人2 ・ サクッと一戦"},
+  {id:"m",size:7, aliens:3,name:"スタンダード",desc:"7×7 ・ 宇宙人3 ・ ちょうどいい"},
+  {id:"l",size:9, aliens:4,name:"ワイド",      desc:"9×9 ・ 宇宙人4 ・ 読み合い"},
+  {id:"x",size:11,aliens:6,name:"カオス",      desc:"11×11 ・ 宇宙人6 ・ 長期戦"},
+];
+let chosenPreset="m";
+function applyPreset(id){const p=PRESETS.find(x=>x.id===id)||PRESETS[1];SIZE=p.size;ALIENS=p.aliens;PINGS=p.aliens;chosenPreset=id;}
+
+/* チーム：①パレット内の2極 */
 const THEME=[
-  { name:"ネビュラ",   // 紫×マゼンタ×ティール
-    grad:"linear-gradient(135deg,#7b2d9e,#e0218a 60%,#16c2c2)",
-    glow:"rgba(224,33,138,.55)",
-    bgFilter:"hue-rotate(0deg) saturate(1)" },
-  { name:"サンフレア", // オレンジ×ローズ×ライム
-    grad:"linear-gradient(135deg,#ff8a1e,#ff3d77 55%,#b8e04a)",
-    glow:"rgba(255,138,30,.55)",
-    bgFilter:"hue-rotate(40deg) saturate(1.05)" },
+  {name:"レッド団",     accent:"#cf3f22", accent2:"#e0a52e"},
+  {name:"マスタード団", accent:"#e0a52e", accent2:"#cf3f22"},
 ];
 
-/* ---- 家SVG（未スキャンマス用） ---- */
+/* ════════ 家SVG（黒太線・カートゥーン）════════ */
 function houseSVG(){
-  return `<svg class="house" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-    <polygon points="50,12 88,46 78,46 78,88 58,88 58,64 42,64 42,88 22,88 22,46 12,46" fill="rgba(255,255,255,0.55)"/>
-    <rect x="42" y="52" width="16" height="14" rx="2" fill="rgba(255,255,255,0.25)"/>
-    <rect x="56" y="30" width="18" height="18" rx="2" fill="rgba(255,255,255,0.15)"/>
+  return `<svg class="house" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="filter:url(#rough)">
+    <g stroke="#23201c" stroke-width="5" stroke-linejoin="round" fill="none">
+      <polygon points="50,16 84,46 16,46" fill="#cf3f22"/>
+      <rect x="24" y="46" width="52" height="40" fill="#efe3c4"/>
+      <rect x="42" y="60" width="16" height="26" fill="#e0a52e"/>
+    </g>
   </svg>`;
 }
 
-/* ---- エイリアン：一つ目モンスター × 6色 ---- */
-const ALIEN_COLORS=[
-  {base:"#E8920A", dark:"#B86800"},  // アンバー
-  {base:"#10C0B0", dark:"#0A8880"},  // ターコイズ
-  {base:"#A020C8", dark:"#701890"},  // バイオレット
-  {base:"#D02818", dark:"#981808"},  // クリムゾン
-  {base:"#18B048", dark:"#0E7830"},  // エメラルド
-  {base:"#2848D8", dark:"#1830A0"},  // コバルト
+/* ════════ エイリアン：黒太線＋ベタ＋ハーフトーン影＋版ズレ ════════ */
+const ALIEN_FILLS=[
+  {body:"#cf3f22", shade:"#9a2c14"},  // 朱赤
+  {body:"#e0a52e", shade:"#b87f18"},  // マスタード
+  {body:"#3d8a8a", shade:"#2c6868"},  // ティール
+  {body:"#efe3c4", shade:"#ddcda3"},  // クリーム
+  {body:"#cf3f22", shade:"#9a2c14"},
+  {body:"#e0a52e", shade:"#b87f18"},
 ];
-
 function alienSVG(i){
-  const {base, dark}=ALIEN_COLORS[i%ALIEN_COLORS.length];
-  const cp=`cp${i}`;
+  const {body,shade}=ALIEN_FILLS[i%ALIEN_FILLS.length];
   return `<svg class="alien" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-    <defs><clipPath id="${cp}"><rect width="100" height="100" rx="22"/></clipPath></defs>
-    <!-- ベース背景 -->
-    <rect width="100" height="100" rx="22" fill="${base}"/>
-    <!-- 有機影：右下 -->
-    <ellipse cx="78" cy="82" rx="44" ry="36" fill="${dark}" opacity="0.55" clip-path="url(#${cp})"/>
-    <!-- 有機影：左上 -->
-    <ellipse cx="18" cy="22" rx="26" ry="20" fill="${dark}" opacity="0.35" clip-path="url(#${cp})"/>
-    <!-- 白目 -->
-    <circle cx="50" cy="40" r="24" fill="#ffffff"/>
-    <!-- 瞳 -->
-    <circle cx="50" cy="42" r="14" fill="#111111"/>
-    <!-- ハイライト -->
-    <circle cx="58" cy="33" r="6" fill="#ffffff"/>
-    <!-- 口ベース -->
-    <path d="M26 68 Q50 88 74 68 L74 78 Q50 96 26 78Z" fill="#111111"/>
-    <!-- ギザ歯 -->
-    <path d="M33 68 L33 77 M41 71 L41 78 M50 72 L50 80 M59 71 L59 78 M67 68 L67 77" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round"/>
+    <!-- 版ズレ：色版を線から少しずらして先に刷る -->
+    <g transform="translate(2.2,1.6)" opacity="0.9">
+      <path d="M22 40 Q22 16 50 16 Q78 16 78 40 L78 70 Q78 88 50 88 Q22 88 22 70 Z" fill="${body}"/>
+    </g>
+    <!-- 主版：黒太線＋ベタ -->
+    <g filter="url(#rough)">
+      <path d="M22 40 Q22 16 50 16 Q78 16 78 40 L78 70 Q78 88 50 88 Q22 88 22 70 Z"
+        fill="${body}" stroke="#23201c" stroke-width="5" stroke-linejoin="round"/>
+      <!-- ハーフトーンの影（下半分・右側）-->
+      <path d="M50 50 Q78 50 78 70 Q78 88 50 88 Q34 88 28 76 Z" fill="url(#ht)"/>
+      <!-- 触角 -->
+      <path d="M36 18 Q32 6 26 4 M64 18 Q68 6 74 4" fill="none" stroke="#23201c" stroke-width="4.5" stroke-linecap="round"/>
+      <circle cx="25" cy="4" r="4" fill="${shade}" stroke="#23201c" stroke-width="3"/>
+      <circle cx="75" cy="4" r="4" fill="${shade}" stroke="#23201c" stroke-width="3"/>
+      <!-- 大きな一つ目 -->
+      <circle cx="50" cy="44" r="20" fill="#efe3c4" stroke="#23201c" stroke-width="4.5"/>
+      <circle cx="50" cy="46" r="9" fill="#23201c"/>
+      <circle cx="55" cy="40" r="3.5" fill="#efe3c4"/>
+      <!-- ニヤけ口＋牙 -->
+      <path d="M34 66 Q50 80 66 66" fill="none" stroke="#23201c" stroke-width="4.5" stroke-linecap="round"/>
+      <path d="M40 70 L44 64 L48 70 Z M52 70 L56 64 L60 70 Z" fill="#efe3c4" stroke="#23201c" stroke-width="2.5" stroke-linejoin="round"/>
+    </g>
   </svg>`;
 }
 
-/* ---- 状態 ---- */
+/* ════════ 状態 ════════ */
 let S;
-function fresh(){
-  return {
-    phase:"intro",
-    boards:[emptyBoard(),emptyBoard()],
-    attacker:0, placeIdx:0,
-    pingsLeft:PINGS, lastResult:null, winner:null,
-    reveal:false, nextAfterBlind:null,
-    alienSeed:Math.floor(Math.random()*5),
-  };
-}
-function emptyBoard(){return {aliens:[],hits:{},pings:{},alienType:{}};}
+function fresh(){return{phase:"intro",boards:[emptyBoard(),emptyBoard()],attacker:0,placeIdx:0,
+  pingsLeft:PINGS,lastResult:null,winner:null,reveal:false,nextAfterBlind:null,
+  alienSeed:Math.floor(Math.random()*5)};}
+function emptyBoard(){return{aliens:[],hits:{},pings:{},alienType:{}};}
 
-/* ---- 距離→色 ---- */
-function distColor(d){
-  if(d<=1) return "#ff5277";
-  if(d===2) return "#ff8a3d";
-  if(d===3) return "#ffc043";
-  if(d===4) return "#4cc6a0";
-  return "#5cc1e8";
-}
+/* 距離→色（①パレット）*/
+function distColor(d){ if(d<=1)return"#cf3f22"; if(d<=3)return"#b87f18"; return"#2c6868"; }
 
-/* ════════════════ レンダリング ════════════════ */
+/* ════════ レンダリング ════════ */
 const app=document.getElementById("app");
-
-function setTheme(t){
-  const root=document.documentElement.style;
-  root.setProperty("--accent-grad", t.grad);
-  root.setProperty("--accent-glow", t.glow);
-  const bg=document.getElementById("bg");
-  if(bg) bg.style.filter = t.bgFilter;
-}
-
-function render(){
-  const ph=S.phase;
-  if(ph==="intro") return renderIntro();
-  if(ph==="blind-place"||ph==="blind-play") return renderBlind();
-  if(ph==="place") return renderPlace();
-  if(ph==="play") return renderPlay();
-  if(ph==="over") return renderOver();
-}
-
+function render(){const ph=S.phase;
+  if(ph==="intro")return renderIntro();
+  if(ph==="setup")return renderSetup();
+  if(ph==="blind-place"||ph==="blind-play")return renderBlind();
+  if(ph==="place")return renderPlace();
+  if(ph==="play")return renderPlay();
+  if(ph==="over")return renderOver();}
 function el(html){const d=document.createElement("div");d.innerHTML=html.trim();return d.firstChild;}
 
 function renderIntro(){
-  setTheme(THEME[0]);
   app.innerHTML="";
   const s=el(`<div class="screen center">
-    <div class="emoji pulse-emoji">👽</div>
-    <h1 class="title">ALIEN HUNT</h1>
-    <div class="sub">pass &amp; play · 2人対戦</div>
-    <div class="card intro" style="margin-top:22px">
-      <p>どこかに <b>危険な宇宙人が3体</b> 隠れている。可愛い顔して、見つけないと危ない。</p>
-      <p>自分の番は <b>3回スキャン</b> できる。当たれば宇宙人を発見！ 外れたら <b>一番近い宇宙人までの距離</b> だけが返ってくる ── 方角はナゾ。</p>
-      <p>3回スキャンしたら端末を相手に渡す。先に相手の宇宙人を <b>3体ぜんぶ発見</b> したら勝ち。</p>
-      <p style="opacity:.6;font-size:13px">距離をたよりに居場所をしぼりこめ。あてずっぽうは時間のムダ。</p>
+    <svg class="emoji-badge pulse" viewBox="0 0 100 100">${alienInner(0)}</svg>
+    <div class="logo">
+      <span class="l1">The</span>
+      <span class="l2">Alien Hunt</span>
+      <span class="l3">エイリアン・ハント</span>
     </div>
-    <button class="btn" style="margin-top:24px" id="start">対戦をはじめる</button>
+    <div class="panel intro" style="margin-top:22px">
+      <p>どこかに <b>危険な宇宙人</b> が隠れている。可愛い顔して、見つけないと危ない。</p>
+      <p>自分の番は数回 <b>スキャン</b> できる。命中で発見！ 外れたら <b>一番近い宇宙人までの距離</b> だけが返る ── 方角はナゾ。</p>
+      <p>スキャンを使い切ったら端末を相手に渡す。先に相手の宇宙人を <b>ぜんぶ発見</b> したら勝ち。</p>
+      <p class="small">距離をたよりに居場所をしぼりこめ。あてずっぽうは時間のムダ。</p>
+    </div>
+    <button class="btn" style="margin-top:22px" id="start"><span>ゲーム設定へ</span></button>
   </div>`);
   app.appendChild(s);
-  s.querySelector("#start").onclick=()=>{
-    S=fresh(); S.phase="place"; S.placeIdx=0; render();
-  };
+  s.querySelector("#start").onclick=()=>{S.phase="setup";render();};
+}
+
+/* ロゴ/バッジ用：エイリアンの中身だけ（viewBox共有）*/
+function alienInner(i){
+  const {body,shade}=ALIEN_FILLS[i%ALIEN_FILLS.length];
+  return `<g transform="translate(2.2,1.6)" opacity="0.9"><path d="M22 40 Q22 16 50 16 Q78 16 78 40 L78 70 Q78 88 50 88 Q22 88 22 70 Z" fill="${body}"/></g>
+    <g filter="url(#rough)">
+      <path d="M22 40 Q22 16 50 16 Q78 16 78 40 L78 70 Q78 88 50 88 Q22 88 22 70 Z" fill="${body}" stroke="#23201c" stroke-width="5" stroke-linejoin="round"/>
+      <path d="M50 50 Q78 50 78 70 Q78 88 50 88 Q34 88 28 76 Z" fill="url(#ht)"/>
+      <path d="M36 18 Q32 6 26 4 M64 18 Q68 6 74 4" fill="none" stroke="#23201c" stroke-width="4.5" stroke-linecap="round"/>
+      <circle cx="25" cy="4" r="4" fill="${shade}" stroke="#23201c" stroke-width="3"/>
+      <circle cx="75" cy="4" r="4" fill="${shade}" stroke="#23201c" stroke-width="3"/>
+      <circle cx="50" cy="44" r="20" fill="#efe3c4" stroke="#23201c" stroke-width="4.5"/>
+      <circle cx="50" cy="46" r="9" fill="#23201c"/>
+      <circle cx="55" cy="40" r="3.5" fill="#efe3c4"/>
+      <path d="M34 66 Q50 80 66 66" fill="none" stroke="#23201c" stroke-width="4.5" stroke-linecap="round"/>
+      <path d="M40 70 L44 64 L48 70 Z M52 70 L56 64 L60 70 Z" fill="#efe3c4" stroke="#23201c" stroke-width="2.5" stroke-linejoin="round"/>
+    </g>`;
+}
+
+function renderSetup(){
+  app.innerHTML="";
+  const s=el(`<div class="screen center">
+    <div class="tag" style="margin-bottom:12px"><span>STEP 0 · ルール</span></div>
+    <h1 class="ttl">盤面をえらぶ</h1>
+    <div class="sub" style="color:var(--cream);text-shadow:1px 1px 0 var(--ink)">スキャン回数 = 宇宙人の数</div>
+    <div class="preset-grid" id="presets"></div>
+    <button class="btn" style="margin-top:20px" id="go"><span>この設定ではじめる</span></button>
+  </div>`);
+  app.appendChild(s);
+  const wrap=s.querySelector("#presets");
+  PRESETS.forEach(p=>{
+    const n=Math.min(p.size,6);
+    const on=new Set(); while(on.size<Math.min(p.aliens,n*n))on.add(Math.floor(Math.random()*n*n));
+    let dots=""; for(let i=0;i<n*n;i++)dots+=`<i class="${on.has(i)?'on':''}"></i>`;
+    const c=el(`<button class="preset ${p.id===chosenPreset?'sel':''}" data-id="${p.id}">
+      <span class="mini" style="grid-template-columns:repeat(${n},1fr)">${dots}</span>
+      <span class="pinfo"><span class="pname">${p.name}</span><span class="pdesc">${p.desc}</span></span>
+    </button>`);
+    c.onclick=()=>{chosenPreset=p.id;wrap.querySelectorAll(".preset").forEach(x=>x.classList.toggle("sel",x.dataset.id===p.id));};
+    wrap.appendChild(c);
+  });
+  s.querySelector("#go").onclick=()=>{applyPreset(chosenPreset);S=fresh();S.phase="place";S.placeIdx=0;render();};
 }
 
 function renderBlind(){
-  const who = S.phase==="blind-place"? S.placeIdx : S.attacker;
-  const t=THEME[who]; setTheme(t);
-  const action = S.phase==="blind-place" ? "宇宙人を配置" : "スキャン";
+  const who=S.phase==="blind-place"?S.placeIdx:S.attacker;
+  const t=THEME[who];
+  const action=S.phase==="blind-place"?"宇宙人を配置":"スキャン";
   app.innerHTML="";
-  const aliens=[0,1,2].map(k=>alienSVG(S.alienSeed+who*3+k)).join("");
+  const aliens=[0,1,2].map(k=>`<svg viewBox="0 0 100 100">${alienInner(S.alienSeed+who*3+k)}</svg>`).join("");
   const s=el(`<div class="screen center">
-    <div class="card">
-      <div class="emoji">🛸</div>
-      <h2 class="title" style="font-size:24px;margin-top:10px">プレイヤー ${who+1} へ</h2>
-      <div class="sub" style="margin-top:6px">${t.name} チーム</div>
+    <div class="panel">
+      <div class="tag" style="margin-bottom:10px"><span>PASS THE DEVICE</span></div>
+      <h2 class="ttl dark" style="font-size:26px">プレイヤー ${who+1} へ</h2>
+      <div class="sub" style="margin-top:6px">${t.name}</div>
       <div class="blind-aliens">${aliens}</div>
-      <p style="font-size:14px;font-weight:500;line-height:1.7;opacity:.8">
-        端末をプレイヤー ${who+1} に渡してね。<br>相手に画面を見られていないのを確認したら、ボタンを押して${action}へ。
-      </p>
-      <button class="btn" style="margin-top:22px" id="go">私はプレイヤー ${who+1}</button>
+      <p style="font-family:'Zilla Slab';font-size:16px;line-height:1.5;opacity:.8">
+        端末をプレイヤー ${who+1} に渡してね。<br>相手に見られていないのを確認したら、ボタンを押して${action}へ。</p>
+      <button class="btn alt" style="margin-top:18px" id="go"><span>私はプレイヤー ${who+1}</span></button>
     </div>
   </div>`);
   app.appendChild(s);
-  s.querySelector("#go").onclick=()=>{
-    S.phase = S.nextAfterBlind==="place" ? "place" : "play"; render();
-  };
+  s.querySelector("#go").onclick=()=>{S.phase=S.nextAfterBlind==="place"?"place":"play";render();};
 }
 
 function renderPlace(){
-  const me=S.boards[S.placeIdx], t=THEME[S.placeIdx]; setTheme(t);
+  const me=S.boards[S.placeIdx],t=THEME[S.placeIdx];
   app.innerHTML="";
   const done=me.aliens.length===ALIENS;
   const s=el(`<div class="screen">
-    <h1 class="title" style="margin-top:8px">配置フェーズ</h1>
-    <div class="sub">プレイヤー ${S.placeIdx+1}（${t.name}）· 宇宙人 ${me.aliens.length}/${ALIENS}</div>
-    <p style="font-size:13.5px;font-weight:500;opacity:.7;text-align:center;margin:12px 0 14px">
-      自分のエリアに宇宙人を ${ALIENS} 体かくす。タップで設置／解除。
-    </p>
-    <div class="grid" id="grid" style="grid-template-columns:repeat(${SIZE},1fr)"></div>
-      <div style="text-align:center;margin-top:16px">
-        <button class="btn" id="confirm" ${done?"":"disabled"} style="margin-top:0">配置を確定</button>
-      </div>
+    <div class="tag" style="margin:2px auto 8px"><span>STEP 1 · 配置</span></div>
+    <h1 class="ttl" style="font-size:30px">配置フェーズ</h1>
+    <div class="sub" style="color:var(--cream);text-shadow:1px 1px 0 var(--ink)">プレイヤー ${S.placeIdx+1}（${t.name}）· ${me.aliens.length}/${ALIENS}</div>
+    <p style="font-family:'Zilla Slab';font-size:15px;font-weight:600;text-align:center;margin:10px 0 12px;color:var(--cream);text-shadow:1px 1px 0 var(--ink)">
+      自分のエリアに宇宙人を ${ALIENS} 体かくす。タップで設置／解除。</p>
+    <div class="grid-mat"><div class="grid" id="grid" style="grid-template-columns:repeat(${SIZE},1fr)"></div></div>
+    <div style="text-align:center;margin-top:16px"><button class="btn" id="confirm" ${done?"":"disabled"}><span>配置を確定</span></button></div>
   </div>`);
   app.appendChild(s);
   const grid=s.querySelector("#grid");
   for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++){
-    const b=document.createElement("button");
-    b.className="cell";
+    const b=document.createElement("button");b.className="cell";
     const ship=me.aliens.some(a=>a.r===r&&a.c===c);
-    if(ship){
-      b.classList.add("placed-alien");
-      b.innerHTML=alienSVG(S.alienSeed+S.placeIdx*3+me.aliens.findIndex(a=>a.r===r&&a.c===c));
-    } else {
-      b.innerHTML=houseSVG();
-    }    b.onclick=()=>{
-      const idx=me.aliens.findIndex(a=>a.r===r&&a.c===c);
-      if(idx>=0)me.aliens.splice(idx,1);
-      else if(me.aliens.length<ALIENS)me.aliens.push({r,c});
-      renderPlace();
-    };
+    if(ship){b.classList.add("placed-alien");b.innerHTML=alienSVG(S.alienSeed+S.placeIdx*3+me.aliens.findIndex(a=>a.r===r&&a.c===c));}
+    else b.innerHTML=houseSVG();
+    b.onclick=()=>{const idx=me.aliens.findIndex(a=>a.r===r&&a.c===c);
+      if(idx>=0)me.aliens.splice(idx,1);else if(me.aliens.length<ALIENS)me.aliens.push({r,c});
+      renderPlace();};
     grid.appendChild(b);
   }
   s.querySelector("#confirm").onclick=()=>{
     if(me.aliens.length!==ALIENS)return;
-    // 各宇宙人にタイプ割り当て
     me.aliens.forEach((a,i)=>{me.alienType[KEY(a.r,a.c)]=S.alienSeed+S.placeIdx*3+i;});
     if(S.placeIdx===0){S.nextAfterBlind="place";S.placeIdx=1;S.phase="blind-place";}
     else{S.nextAfterBlind="play";S.attacker=0;S.phase="blind-play";}
@@ -396,202 +474,127 @@ function renderPlace(){
 
 function renderPlay(){
   const def=S.boards[1-S.attacker];
-  const t=THEME[S.attacker], dt=THEME[1-S.attacker]; setTheme(t);
+  const t=THEME[S.attacker],dt=THEME[1-S.attacker];
   const found=def.aliens.filter(a=>def.hits[KEY(a.r,a.c)]).length;
   app.innerHTML="";
   const pips=Array.from({length:PINGS},(_,i)=>`<span class="pip ${i<PINGS-S.pingsLeft?'spent':''}"></span>`).join("");
   const s=el(`<div class="screen">
-    <h1 class="title" style="margin-top:8px">プレイヤー ${S.attacker+1} のスキャン</h1>
-    <div class="sub">ねらうはプレイヤー ${2-S.attacker}（${dt.name}）のエリア</div>
+    <div class="tag" style="margin:2px auto 6px"><span>STEP 2 · スキャン</span></div>
+    <h1 class="ttl" style="font-size:28px">プレイヤー ${S.attacker+1} のターン</h1>
+    <div class="sub" style="color:var(--cream);text-shadow:1px 1px 0 var(--ink)">ねらうは プレイヤー ${2-S.attacker}（${dt.name}）</div>
     <div class="hud">
       <div class="stat"><div class="lbl">残りスキャン</div><div class="val">${pips}</div></div>
       <div class="stat"><div class="lbl">発見した宇宙人</div><div class="val">${found} / ${ALIENS}</div></div>
     </div>
-    <div class="grid" id="grid" style="grid-template-columns:repeat(${SIZE},1fr)"></div>
-      <div class="msg" id="msg"></div>
-      <div class="legend">
-        <div class="it"><span class="sw" style="background:#ff5277">0</span>発見/至近</div>
-        <div class="it"><span class="sw" style="background:#ff8a3d">2</span></div>
-        <div class="it"><span class="sw" style="background:#ffc043">3</span></div>
-        <div class="it"><span class="sw" style="background:#4cc6a0">4</span></div>
-        <div class="it"><span class="sw" style="background:#5cc1e8">5+</span>遠い</div>
-        <div class="it" style="width:100%;justify-content:center;margin-top:2px;font-size:10px;opacity:.7">ドットの数＝近くに複数いる</div>
-      </div>
+    <div class="grid-mat"><div class="grid" id="grid" style="grid-template-columns:repeat(${SIZE},1fr)"></div></div>
+    <div class="msg" id="msg"></div>
+    <div class="legend">
+      <div class="it"><span class="sw" style="background:#cf3f22">0</span>至近</div>
+      <div class="it"><span class="sw" style="background:#e0a52e">2-3</span>近い</div>
+      <div class="it"><span class="sw" style="background:#3d8a8a">4+</span>遠い</div>
+      <div class="it" style="width:100%;justify-content:center;font-size:13px;opacity:.8">ドットの数＝近くに複数いる</div>
+    </div>
   </div>`);
   app.appendChild(s);
   const grid=s.querySelector("#grid");
   for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++){
-    const k=KEY(r,c);
-    const b=document.createElement("button");
-    b.className="cell";
+    const k=KEY(r,c);const b=document.createElement("button");b.className="cell";
     const isAlien=def.aliens.some(a=>a.r===r&&a.c===c);
     if(def.hits[k]){
-      // 初めてhitした直後だけアニメ、それ以降はstatic表示
-      const isNewHit = S.lastResult && S.lastResult.kind==="hit" && S.lastResult.key===k;
-      b.classList.add("ship");
-      if(isNewHit) b.classList.add("found");
+      const isNew=S.lastResult&&S.lastResult.kind==="hit"&&S.lastResult.key===k;
+      if(isNew)b.classList.add("found");
       b.innerHTML=alienSVG(def.alienType[k]??0);
-    } else if(S.reveal && isAlien){
-      b.classList.add("ship","reveal");
-      b.style.opacity=".96";
-      b.innerHTML=alienSVG(def.alienType[k]??0);
-    } else if(def.pings[k]!==undefined){
+    }else if(S.reveal&&isAlien){
+      b.classList.add("reveal");b.style.opacity=".96";b.innerHTML=alienSVG(def.alienType[k]??0);
+    }else if(def.pings[k]!==undefined){
       b.classList.add("ping");
-      const pingData=def.pings[k];
-      const dists=pingData.dists||[];
-      const minD=dists[0];
-      // 複数距離をドットで表現
+      const dists=def.pings[k].dists||[];const minD=dists[0];
       if(dists.length>1){
-        const dots=dists.map(d=>`<span style="background:${distColor(d)};box-shadow:0 0 5px ${distColor(d)}"></span>`).join("");
-        b.innerHTML=`<div class="dist-wrap"><span class="dist" style="color:${distColor(minD)}">${minD}</span><div class="dist-dots">${dots}</div></div>`;
-      } else {
-        b.innerHTML=`<span class="dist" style="color:${distColor(minD)}">${minD}</span>`;
-      }
-    } else {
-      // 未スキャン → 家アイコン
-      b.innerHTML=houseSVG();
-    }
-    if(!S.reveal && !def.hits[k] && def.pings[k]===undefined){
-      b.onclick=()=>fire(r,c);
-    }
+        const dd=dists.map(d=>`<span style="background:${distColor(d)}"></span>`).join("");
+        b.innerHTML=`<div class="dist-wrap"><span class="dist">${minD}</span><div class="dist-dots">${dd}</div></div>`;
+      }else b.innerHTML=`<span class="dist">${minD}</span>`;
+    }else b.innerHTML=houseSVG();
+    if(!S.reveal&&!def.hits[k]&&def.pings[k]===undefined)b.onclick=()=>fire(r,c);
     grid.appendChild(b);
   }
   const msg=s.querySelector("#msg");
-  if(S.reveal){
-    msg.className="msg found";
-    msg.textContent="👾 残りの宇宙人はここにいた！";
-  } else if(S.lastResult){
+  if(S.reveal){msg.className="msg found";msg.textContent="👾 残りの宇宙人はここにいた！";}
+  else if(S.lastResult){
     if(S.lastResult.kind==="hit"){msg.className="msg found";msg.textContent="発見！ 宇宙人を確保した";}
-    else{
-      msg.className="msg";
-      const dists=S.lastResult.dists||[S.lastResult.dist];
-      if(dists.length===1){
-        msg.style.color=distColor(dists[0]);
-        msg.innerHTML=`スキャン応答 … 最も近い宇宙人まで <b style="font-size:20px">${dists[0]}</b>`;
-      } else {
-        const colored=dists.map(d=>`<b style="color:${distColor(d)};font-size:18px">${d}</b>`).join(" · ");
-        msg.innerHTML=`スキャン応答 … エイリアン距離: ${colored}`;
-      }
+    else{msg.className="msg";const dists=S.lastResult.dists||[S.lastResult.dist];
+      if(dists.length===1){msg.innerHTML=`スキャン応答 … 最も近い宇宙人まで <b style="font-size:22px;color:${distColor(dists[0])}">${dists[0]}</b>`;}
+      else{const col=dists.map(d=>`<b style="color:${distColor(d)};font-size:20px">${d}</b>`).join(" · ");msg.innerHTML=`スキャン応答 … 距離: ${col}`;}
     }
   }
 }
 
 function fire(r,c){
-  const def=S.boards[1-S.attacker];
-  const k=KEY(r,c);
+  const def=S.boards[1-S.attacker];const k=KEY(r,c);
   if(def.hits[k]||def.pings[k]!==undefined||S.pingsLeft<=0)return;
   const hit=def.aliens.find(a=>a.r===r&&a.c===c);
-  if(hit){
-    def.hits[k]=true;
-    refreshAffectedPings(def,k);
-    S.lastResult={kind:"hit", key:k};
-  } else {
+  if(hit){def.hits[k]=true;refreshAffectedPings(def,k);S.lastResult={kind:"hit",key:k};}
+  else{
     const alive=def.aliens.filter(a=>!def.hits[KEY(a.r,a.c)]);
-    // 全エイリアンへの距離を保存（複数情報表示用）
-    const detailed=alive.map(a=>({
-      key:KEY(a.r,a.c),
-      dist:manhattan({r,c},a)
-    })).sort((a,b)=>a.dist-b.dist);
-    const minD=detailed[0].dist;
-    const nearest=detailed.filter(x=>x.dist===minD).map(x=>x.key);
-    const dists=detailed.map(x=>x.dist);
-    def.pings[k]={dists,nearest,scan:{r,c}};
-    S.lastResult={kind:"ping",dist:minD,dists};
+    const detailed=alive.map(a=>({key:KEY(a.r,a.c),dist:manhattan({r,c},a)})).sort((a,b)=>a.dist-b.dist);
+    const minD=detailed[0].dist;const nearest=detailed.filter(x=>x.dist===minD).map(x=>x.key);
+    def.pings[k]={dists:detailed.map(x=>x.dist),nearest,scan:{r,c}};
+    S.lastResult={kind:"ping",dist:minD,dists:detailed.map(x=>x.dist)};
   }
-  // 発見演出（放射スパーク）
   renderPlay();
-  if(hit) spark(r,c);
-
+  if(hit)spark(r,c);
   const found=def.aliens.filter(a=>def.hits[KEY(a.r,a.c)]).length;
-  if(found>=ALIENS){
-    S.winner=S.attacker;
+  if(found>=ALIENS){S.winner=S.attacker;
     setTimeout(()=>{S.reveal=true;render();},550);
-    setTimeout(()=>{S.phase="over";render();},2900);
-    return;
-  }
+    setTimeout(()=>{S.phase="over";render();},2900);return;}
   S.pingsLeft--;
   if(S.pingsLeft<=0){
-
-    const delay =
-      (S.lastResult && S.lastResult.kind==="ping")
-        ? 1200
-        : 700;
-
-    setTimeout(()=>{
-      S.nextAfterBlind="play";
-      S.attacker=1-S.attacker;
-      S.pingsLeft=PINGS;
-      S.lastResult=null;
-      S.phase="blind-play";
-      render();
-    },delay);
+    const delay=(S.lastResult&&S.lastResult.kind==="ping")?1200:700;
+    setTimeout(()=>{S.nextAfterBlind="play";S.attacker=1-S.attacker;S.pingsLeft=PINGS;S.lastResult=null;S.phase="blind-play";render();},delay);
   }
 }
-
-
-function refreshAffectedPings(def, foundKey){
-  Object.keys(def.pings).forEach(k=>{
-    const ping=def.pings[k];
-    if(!ping || !ping.nearest || !ping.nearest.includes(foundKey)) return;
-
-    const {r,c}=ping.scan;
-    const alive=def.aliens.filter(a=>!def.hits[KEY(a.r,a.c)]);
-
-    if(alive.length===0){
-      delete def.pings[k];
-      return;
-    }
-
-    const detailed=alive.map(a=>({
-      key:KEY(a.r,a.c),
-      dist:manhattan({r,c},a)
-    })).sort((a,b)=>a.dist-b.dist);
-
-    const minD=detailed[0].dist;
-    ping.nearest=detailed.filter(x=>x.dist===minD).map(x=>x.key);
-    ping.dists=detailed.map(x=>x.dist);
+function refreshAffectedPings(def,foundKey){
+  Object.keys(def.pings).forEach(k=>{const ping=def.pings[k];
+    if(!ping||!ping.nearest||!ping.nearest.includes(foundKey))return;
+    const {r,c}=ping.scan;const alive=def.aliens.filter(a=>!def.hits[KEY(a.r,a.c)]);
+    if(alive.length===0){delete def.pings[k];return;}
+    const detailed=alive.map(a=>({key:KEY(a.r,a.c),dist:manhattan({r,c},a)})).sort((a,b)=>a.dist-b.dist);
+    const minD=detailed[0].dist;ping.nearest=detailed.filter(x=>x.dist===minD).map(x=>x.key);ping.dists=detailed.map(x=>x.dist);
   });
 }
-
-
 function spark(r,c){
-  const grid=document.getElementById("grid");
-  if(!grid)return;
-  const cell=grid.children[r*SIZE+c];
-  if(!cell)return;
-  const burst=document.createElement("div");
-  burst.className="burst";
-  for(let i=0;i<8;i++){
-    const sp=document.createElement("span");
-    const ang=(Math.PI*2/8)*i;
-    sp.style.setProperty("--dx",Math.cos(ang)*34+"px");
-    sp.style.setProperty("--dy",Math.sin(ang)*34+"px");
-    sp.style.animationDelay=(i*8)+"ms";
-    burst.appendChild(sp);
-  }
-  cell.appendChild(burst);
-  setTimeout(()=>burst.remove(),700);
+  const grid=document.getElementById("grid");if(!grid)return;
+  const cell=grid.children[r*SIZE+c];if(!cell)return;
+  const burst=document.createElement("div");burst.className="burst";
+  for(let i=0;i<8;i++){const sp=document.createElement("span");const ang=(Math.PI*2/8)*i;
+    sp.style.setProperty("--dx",Math.cos(ang)*34+"px");sp.style.setProperty("--dy",Math.sin(ang)*34+"px");
+    sp.style.animationDelay=(i*8)+"ms";burst.appendChild(sp);}
+  cell.appendChild(burst);setTimeout(()=>burst.remove(),700);
 }
 
 function renderOver(){
-  const t=THEME[S.winner]; setTheme(t);
+  const t=THEME[S.winner];
   app.innerHTML="";
   const s=el(`<div class="screen center">
-    <div class="emoji pulse-emoji">🏆</div>
-    <div class="card" style="margin-top:14px">
-      <h1 class="title" style="font-size:26px">プレイヤー ${S.winner+1} の勝利</h1>
-      <div class="sub" style="margin-top:6px">${t.name} チーム</div>
-      <p style="font-size:14.5px;font-weight:500;line-height:1.7;opacity:.8;margin-top:14px">
-        危険な宇宙人 3体を ぜんぶ発見した。<br>銀河に平和がもどった。
-      </p>
-      <button class="btn" id="again" style="margin-top:22px">もっかいやろ！</button>
+    <svg class="emoji-badge pulse" viewBox="0 0 100 100">${alienInner(S.alienSeed+S.winner*3)}</svg>
+    <div class="panel" style="margin-top:14px">
+      <div class="tag" style="margin-bottom:10px"><span>THE END</span></div>
+      <h1 class="ttl dark" style="font-size:26px">プレイヤー ${S.winner+1} の勝利</h1>
+      <div class="sub" style="margin-top:6px">${t.name}</div>
+      <p style="font-family:'Zilla Slab';font-size:16px;line-height:1.6;opacity:.8;margin-top:12px">
+        危険な宇宙人 ${ALIENS}体を ぜんぶ発見した。<br>銀河に平和がもどった。</p>
+      <div style="display:flex;gap:10px;justify-content:center;margin-top:20px;flex-wrap:wrap">
+        <button class="btn alt" id="again"><span>もっかい</span></button>
+        <button class="btn ghost" id="reconf"><span>設定をかえる</span></button>
+      </div>
     </div>
   </div>`);
   app.appendChild(s);
   s.querySelector("#again").onclick=()=>{S=fresh();S.phase="place";render();};
+  s.querySelector("#reconf").onclick=()=>{S=fresh();S.phase="setup";render();};
 }
 
-/* ---- 起動 ---- */
+/* ════════ 起動 ════════ */
+applyPreset(chosenPreset);
 S=fresh();
 render();
 </script>
