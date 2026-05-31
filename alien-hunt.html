@@ -437,7 +437,8 @@ function renderPlay(){
       b.innerHTML=alienSVG(def.alienType[k]??0);
     } else if(def.pings[k]!==undefined){
       b.classList.add("ping");
-      const dists=Array.isArray(def.pings[k])?def.pings[k]:[def.pings[k]];
+      const pingData=def.pings[k];
+      const dists=pingData.dists||[];
       const minD=dists[0];
       // 複数距離をドットで表現
       if(dists.length>1){
@@ -482,13 +483,19 @@ function fire(r,c){
   const hit=def.aliens.find(a=>a.r===r&&a.c===c);
   if(hit){
     def.hits[k]=true;
+    refreshAffectedPings(def,k);
     S.lastResult={kind:"hit", key:k};
   } else {
     const alive=def.aliens.filter(a=>!def.hits[KEY(a.r,a.c)]);
     // 全エイリアンへの距離を保存（複数情報表示用）
-    const dists=alive.map(a=>manhattan({r,c},a)).sort((a,b)=>a-b);
-    def.pings[k]=dists; // 配列で保持
-    const minD=dists[0];
+    const detailed=alive.map(a=>({
+      key:KEY(a.r,a.c),
+      dist:manhattan({r,c},a)
+    })).sort((a,b)=>a.dist-b.dist);
+    const minD=detailed[0].dist;
+    const nearest=detailed.filter(x=>x.dist===minD).map(x=>x.key);
+    const dists=detailed.map(x=>x.dist);
+    def.pings[k]={dists,nearest,scan:{r,c}};
     S.lastResult={kind:"ping",dist:minD,dists};
   }
   // 発見演出（放射スパーク）
@@ -504,6 +511,12 @@ function fire(r,c){
   }
   S.pingsLeft--;
   if(S.pingsLeft<=0){
+
+    const delay =
+      (S.lastResult && S.lastResult.kind==="ping")
+        ? 1200
+        : 700;
+
     setTimeout(()=>{
       S.nextAfterBlind="play";
       S.attacker=1-S.attacker;
@@ -511,9 +524,35 @@ function fire(r,c){
       S.lastResult=null;
       S.phase="blind-play";
       render();
-    },700);
+    },delay);
   }
 }
+
+
+function refreshAffectedPings(def, foundKey){
+  Object.keys(def.pings).forEach(k=>{
+    const ping=def.pings[k];
+    if(!ping || !ping.nearest || !ping.nearest.includes(foundKey)) return;
+
+    const {r,c}=ping.scan;
+    const alive=def.aliens.filter(a=>!def.hits[KEY(a.r,a.c)]);
+
+    if(alive.length===0){
+      delete def.pings[k];
+      return;
+    }
+
+    const detailed=alive.map(a=>({
+      key:KEY(a.r,a.c),
+      dist:manhattan({r,c},a)
+    })).sort((a,b)=>a.dist-b.dist);
+
+    const minD=detailed[0].dist;
+    ping.nearest=detailed.filter(x=>x.dist===minD).map(x=>x.key);
+    ping.dists=detailed.map(x=>x.dist);
+  });
+}
+
 
 function spark(r,c){
   const grid=document.getElementById("grid");
