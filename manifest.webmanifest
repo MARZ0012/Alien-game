@@ -1,0 +1,17 @@
+{
+  "name": "ALIEN HUNT",
+  "short_name": "ALIEN HUNT",
+  "description": "宇宙人を探し出す2人対戦パズル。pass & play。",
+  "lang": "ja",
+  "start_url": "./alien-hunt.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#3d8a8a",
+  "theme_color": "#3d8a8a",
+  "icons": [
+    { "src": "./icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

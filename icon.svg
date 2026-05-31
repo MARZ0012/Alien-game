@@ -1,0 +1,68 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="rough" x="-15%" y="-15%" width="130%" height="130%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="3" seed="4" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="14"/>
+    </filter>
+    <!-- ハーフトーン（影用） -->
+    <pattern id="ht" width="34" height="34" patternUnits="userSpaceOnUse">
+      <circle cx="17" cy="17" r="9" fill="#23201c" opacity="0.5"/>
+    </pattern>
+    <!-- 背景の薄いハーフトーン -->
+    <pattern id="htbg" width="46" height="46" patternUnits="userSpaceOnUse">
+      <circle cx="23" cy="23" r="9" fill="#23201c" opacity="0.16"/>
+    </pattern>
+    <!-- 古紙グレイン -->
+    <filter id="age">
+      <feTurbulence type="fractalNoise" baseFrequency="0.006 0.007" numOctaves="5" seed="17" result="t"/>
+      <feColorMatrix in="t" type="matrix" values="0 0 0 0 .32  0 0 0 0 .2  0 0 0 0 .05  0 0 0 .5 0"/>
+    </filter>
+    <clipPath id="round"><rect width="1024" height="1024" rx="0"/></clipPath>
+  </defs>
+
+  <g clip-path="url(#round)">
+    <!-- 水色（ティール）地 -->
+    <rect width="1024" height="1024" fill="#3d8a8a"/>
+    <!-- 背景ハーフトーン -->
+    <rect width="1024" height="1024" fill="url(#htbg)"/>
+    <!-- ①風の斜め色面 -->
+    <polygon points="1024,0 700,0 1024,560" fill="#cf3f22" opacity="0.42"/>
+    <polygon points="0,1024 0,640 380,1024" fill="#e0a52e" opacity="0.4"/>
+    <polygon points="1024,1024 1024,720 720,1024" fill="#2c6868" opacity="0.55"/>
+
+    <!-- ★ 中心のエイリアン（大きく） -->
+    <g transform="translate(512,540) scale(7.2) translate(-50,-50)">
+      <!-- 版ズレ：色版を線からずらして先に刷る -->
+      <g transform="translate(2.2,1.6)" opacity="0.9">
+        <path d="M22 40 Q22 16 50 16 Q78 16 78 40 L78 70 Q78 88 50 88 Q22 88 22 70 Z" fill="#cf3f22"/>
+      </g>
+      <!-- 主版：黒太線＋ベタ -->
+      <g filter="url(#rough)">
+        <path d="M22 40 Q22 16 50 16 Q78 16 78 40 L78 70 Q78 88 50 88 Q22 88 22 70 Z"
+          fill="#cf3f22" stroke="#23201c" stroke-width="5" stroke-linejoin="round"/>
+        <!-- ハーフトーンの影 -->
+        <path d="M50 50 Q78 50 78 70 Q78 88 50 88 Q34 88 28 76 Z" fill="url(#ht)"/>
+        <!-- 触角 -->
+        <path d="M36 18 Q32 6 26 4 M64 18 Q68 6 74 4" fill="none" stroke="#23201c" stroke-width="4.5" stroke-linecap="round"/>
+        <circle cx="25" cy="4" r="4" fill="#9a2c14" stroke="#23201c" stroke-width="3"/>
+        <circle cx="75" cy="4" r="4" fill="#9a2c14" stroke="#23201c" stroke-width="3"/>
+        <!-- 大きな一つ目 -->
+        <circle cx="50" cy="44" r="20" fill="#efe3c4" stroke="#23201c" stroke-width="4.5"/>
+        <circle cx="50" cy="46" r="9" fill="#23201c"/>
+        <circle cx="55" cy="40" r="3.5" fill="#efe3c4"/>
+        <!-- ニヤけ口＋牙 -->
+        <path d="M34 66 Q50 80 66 66" fill="none" stroke="#23201c" stroke-width="4.5" stroke-linecap="round"/>
+        <path d="M40 70 L44 64 L48 70 Z M52 70 L56 64 L60 70 Z" fill="#efe3c4" stroke="#23201c" stroke-width="2.5" stroke-linejoin="round"/>
+      </g>
+    </g>
+
+    <!-- 古紙オーバーレイ -->
+    <rect width="1024" height="1024" filter="url(#age)" opacity="0.45" style="mix-blend-mode:multiply"/>
+    <!-- 四隅の焼け -->
+    <rect width="1024" height="1024" style="mix-blend-mode:multiply" fill="url(#burn)"/>
+    <radialGradient id="burn" cx="50%" cy="48%" r="62%">
+      <stop offset="58%" stop-color="#000" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#2a1a06" stop-opacity="0.5"/>
+    </radialGradient>
+  </g>
+</svg>
