@@ -52,6 +52,28 @@
   /* 文中で改行させたくない塊は <span class="nb"> で囲む */
   .nb{white-space:nowrap;}
 
+  /* ════════ BACKボタン（常設）＆メニュー ════════ */
+  #backbtn{
+    position:fixed;top:max(12px,env(safe-area-inset-top));left:14px;z-index:50;
+    font-family:'Anton',sans-serif;font-size:15px;letter-spacing:1px;color:var(--cream);
+    background:var(--ink);border:2px solid var(--ink);border-radius:3px;
+    padding:7px 14px 6px;cursor:pointer;box-shadow:3px 3px 0 rgba(0,0,0,.35);
+    transform:skewX(-5deg);transition:transform .07s;display:flex;align-items:center;gap:4px;
+  }
+  #backbtn span{font-size:20px;line-height:1;transform:skewX(5deg);margin-right:1px;}
+  #backbtn:active{transform:skewX(-5deg) translate(2px,2px);box-shadow:1px 1px 0 rgba(0,0,0,.35);}
+  #menuovl{position:fixed;inset:0;z-index:60;background:rgba(20,15,8,.6);
+    display:flex;align-items:center;justify-content:center;padding:24px;
+    backdrop-filter:blur(2px);}
+  .menu-card{background:var(--cream);border:3px solid var(--ink);box-shadow:7px 7px 0 var(--ink);
+    padding:24px 22px;max-width:330px;width:100%;text-align:center;position:relative;overflow:hidden;}
+  .menu-card::before{content:"";position:absolute;inset:0;pointer-events:none;mix-blend-mode:multiply;opacity:.3;z-index:0;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='mn'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.025 .03' numOctaves='4' seed='6'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 .3 0 0 0 0 .19 0 0 0 0 .05 0 0 0 .45 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23mn)'/%3E%3C/svg%3E");}
+  .menu-card>*{position:relative;z-index:1;}
+  .menu-card .btn{width:100%;}
+  .menu-note{font-family:'Zilla Slab';font-size:15px;font-weight:600;color:var(--red-d);
+    line-height:1.45;margin-bottom:16px;}
+
   /* ════════ 背景：ティール地 + コマ枠の世界 ════════ */
   #bg{position:fixed;inset:0;z-index:0;background:var(--teal);overflow:hidden;}
   /* 背景のハーフトーン（うっすら）*/
@@ -80,7 +102,7 @@
 
   #app{position:relative;z-index:2;height:100dvh;width:100%;
     display:flex;flex-direction:column;align-items:center;
-    padding:max(18px,env(safe-area-inset-top)) 16px max(22px,env(safe-area-inset-bottom));
+    padding:max(56px,calc(env(safe-area-inset-top) + 44px)) 16px max(22px,env(safe-area-inset-bottom));
     overflow-y:auto;}
 
   /* ════════ タイポ ════════ */
@@ -164,6 +186,9 @@
   .cell.reveal{animation:revealPop .5s cubic-bezier(.34,1.7,.5,1) both;}
   /* スキャン済み：退色マスタード地（数字が映える・網点なし）*/
   .cell.ping{background:var(--mustard-pale);}
+  /* 情報が薄れたスキャン済み（3以上が過去ターンに）：地は紙のまま薄い印 */
+  .cell.faded{background:var(--cream);}
+  .cell.faded .faded-mark{width:8px;height:8px;border-radius:50%;background:var(--ink);opacity:.22;position:relative;z-index:2;}
   .cell.ping::after{opacity:.3;mix-blend-mode:multiply;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='70' height='70'%3E%3Cfilter id='cn'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.06 .07' numOctaves='3' seed='4'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 .3 0 0 0 0 .19 0 0 0 0 .05 0 0 0 .5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23cn)'/%3E%3C/svg%3E");
     background-size:70px 70px;}
@@ -354,6 +379,7 @@ function alienSVG(i){
 let S;
 function fresh(){return{phase:"intro",boards:[emptyBoard(),emptyBoard()],attacker:0,placeIdx:0,
   pingsLeft:PINGS,lastResult:null,winner:null,reveal:false,nextAfterBlind:null,
+  turnNo:0,menuOpen:false,
   alienSeed:Math.floor(Math.random()*5)};}
 function emptyBoard(){return{aliens:[],hits:{},pings:{},alienType:{}};}
 
@@ -370,12 +396,40 @@ function distInk(d){
 /* ════════ レンダリング ════════ */
 const app=document.getElementById("app");
 function render(){const ph=S.phase;
-  if(ph==="intro")return renderIntro();
-  if(ph==="setup")return renderSetup();
-  if(ph==="blind-place"||ph==="blind-play")return renderBlind();
-  if(ph==="place")return renderPlace();
-  if(ph==="play")return renderPlay();
-  if(ph==="over")return renderOver();}
+  if(ph==="intro")renderIntro();
+  else if(ph==="setup")renderSetup();
+  else if(ph==="blind-place"||ph==="blind-play")renderBlind();
+  else if(ph==="place")renderPlace();
+  else if(ph==="play")renderPlay();
+  else if(ph==="over")renderOver();
+  renderChrome();
+}
+/* 共通UI：BACKボタン＋メニュー＋確認ダイアログ */
+function renderChrome(){
+  document.querySelectorAll("#backbtn,#menuovl").forEach(n=>n.remove());
+  if(S.phase==="intro")return; // タイトルでは不要
+  // BACKボタン
+  const back=el(`<button id="backbtn" aria-label="メニュー"><span>‹</span> BACK</button>`);
+  back.onclick=()=>{S.menuOpen=true;render();};
+  document.body.appendChild(back);
+  if(!S.menuOpen)return;
+  // 進行中（配置・スキャン）は誤操作防止の文言を強める
+  const midGame=(S.phase==="place"||S.phase==="play"||S.phase==="blind-place"||S.phase==="blind-play");
+  const ovl=el(`<div id="menuovl">
+    <div class="menu-card">
+      <div class="tag" style="margin-bottom:14px"><span>メニュー</span></div>
+      ${midGame?`<p class="menu-note">ゲームの途中だよ。<br>もどると今の盤面はリセットされる。</p>`:``}
+      <button class="btn" id="m-home"><span>ホームへもどる</span></button>
+      <button class="btn alt" id="m-restart" style="margin-top:10px"><span>同じ設定でやり直す</span></button>
+      <button class="btn ghost" id="m-cancel" style="margin-top:10px"><span>つづける</span></button>
+    </div>
+  </div>`);
+  document.body.appendChild(ovl);
+  ovl.querySelector("#m-cancel").onclick=()=>{S.menuOpen=false;render();};
+  ovl.querySelector("#m-home").onclick=()=>{S=fresh();S.phase="intro";render();};
+  ovl.querySelector("#m-restart").onclick=()=>{S=fresh();S.phase="place";S.placeIdx=0;render();};
+  ovl.addEventListener("click",e=>{if(e.target===ovl){S.menuOpen=false;render();}});
+}
 function el(html){const d=document.createElement("div");d.innerHTML=html.trim();return d.firstChild;}
 
 function renderIntro(){
@@ -535,11 +589,21 @@ function renderPlay(){
       b.classList.add("captured","reveal");b.style.opacity=".96";b.innerHTML=alienSVG(def.alienType[k]??0);
     }else if(def.pings[k]!==undefined){
       b.classList.add("ping");
-      const dists=def.pings[k].dists||[];const minD=dists[0];
-      if(dists.length>1){
-        const dd=dists.map(d=>`<span style="background:${distColor(d)}"></span>`).join("");
-        b.innerHTML=`<div class="dist-wrap"><span class="dist" style="color:${distInk(minD)}">${minD}</span><div class="dist-dots">${dd}</div></div>`;
-      }else b.innerHTML=`<span class="dist" style="color:${distInk(minD)}">${minD}</span>`;
+      const pg=def.pings[k];
+      const dists=pg.dists||[];const minD=dists[0];
+      // 表示ルール：1-2は常時 / 3以上は撃った当ターンのみ / それ以降は薄れて非表示
+      const isCurrentTurn=(pg.turn===S.turnNo);
+      const show = (minD<=2) || isCurrentTurn;
+      if(show){
+        if(dists.length>1){
+          const dd=dists.map(d=>`<span style="background:${distColor(d)}"></span>`).join("");
+          b.innerHTML=`<div class="dist-wrap"><span class="dist" style="color:${distInk(minD)}">${minD}</span><div class="dist-dots">${dd}</div></div>`;
+        }else b.innerHTML=`<span class="dist" style="color:${distInk(minD)}">${minD}</span>`;
+      }else{
+        // 情報が薄れたスキャン済みマス（再スキャン不可・数字は隠す）
+        b.classList.add("faded");
+        b.innerHTML=`<span class="faded-mark"></span>`;
+      }
     }else b.innerHTML=houseSVG();
     if(!S.reveal&&!def.hits[k]&&def.pings[k]===undefined)b.onclick=()=>fire(r,c);
     grid.appendChild(b);
@@ -564,7 +628,7 @@ function fire(r,c){
     const alive=def.aliens.filter(a=>!def.hits[KEY(a.r,a.c)]);
     const detailed=alive.map(a=>({key:KEY(a.r,a.c),dist:manhattan({r,c},a)})).sort((a,b)=>a.dist-b.dist);
     const minD=detailed[0].dist;const nearest=detailed.filter(x=>x.dist===minD).map(x=>x.key);
-    def.pings[k]={dists:detailed.map(x=>x.dist),nearest,scan:{r,c}};
+    def.pings[k]={dists:detailed.map(x=>x.dist),nearest,scan:{r,c},turn:S.turnNo};
     S.lastResult={kind:"ping",dist:minD,dists:detailed.map(x=>x.dist)};
   }
   const found=def.aliens.filter(a=>def.hits[KEY(a.r,a.c)]).length;
@@ -577,7 +641,7 @@ function fire(r,c){
     setTimeout(()=>{S.phase="over";render();},2900);return;}
   if(S.pingsLeft<=0){
     const delay=(S.lastResult&&S.lastResult.kind==="ping")?1200:700;
-    setTimeout(()=>{S.nextAfterBlind="play";S.attacker=1-S.attacker;S.pingsLeft=PINGS;S.lastResult=null;S.phase="blind-play";render();},delay);
+    setTimeout(()=>{S.nextAfterBlind="play";S.attacker=1-S.attacker;S.pingsLeft=PINGS;S.lastResult=null;S.turnNo++;S.phase="blind-play";render();},delay);
   }
 }
 function refreshAffectedPings(def,foundKey){
