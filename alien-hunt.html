@@ -22,6 +22,7 @@
     --red-d:#9a2c14;
     --mustard:#e0a52e;     /* マスタード/黄土 */
     --mustard-d:#b87f18;
+    --mustard-pale:#ecd9a0; /* 退色マスタード（スキャン済みセル地・数字が映える）*/
     --cream:#efe3c4;       /* 生成りクリーム（紙）*/
     --cream-d:#ddcda3;
     --ink:#23201c;         /* 主版の黒（少し茶味）*/
@@ -146,18 +147,20 @@
   .cell .house{width:54%;height:54%;position:relative;z-index:2;}
   .cell.found{animation:found .55s cubic-bezier(.34,1.7,.5,1) both;}
   .cell.reveal{animation:revealPop .5s cubic-bezier(.34,1.7,.5,1) both;}
-  /* スキャン済み：マスタード地に網点（応答済みの紙）*/
-  .cell.ping{background:var(--mustard);}
-  .cell.ping::after{opacity:.5;mix-blend-mode:multiply;
-    background-image:radial-gradient(circle at center, var(--ink) 26%, transparent 30%);
-    background-size:6px 6px;}
+  /* スキャン済み：退色マスタード地（数字が映える・網点なし）*/
+  .cell.ping{background:var(--mustard-pale);}
+  .cell.ping::after{opacity:.3;mix-blend-mode:multiply;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='70' height='70'%3E%3Cfilter id='cn'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.06 .07' numOctaves='3' seed='4'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 .3 0 0 0 0 .19 0 0 0 0 .05 0 0 0 .5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23cn)'/%3E%3C/svg%3E");
+    background-size:70px 70px;}
   /* 距離表示 */
   .cell .dist-wrap{display:flex;flex-direction:column;align-items:center;gap:0;width:100%;z-index:3;position:relative;}
-  .cell .dist{font-family:'Anton',sans-serif;font-size:21px;line-height:.9;color:var(--ink);}
+  .cell .dist{font-family:'Anton',sans-serif;font-size:21px;line-height:.9;}
   .cell .dist-dots{display:flex;gap:2px;justify-content:center;margin-top:1px;}
   .cell .dist-dots span{width:5px;height:5px;border-radius:50%;border:1.5px solid var(--ink);}
   /* 配置済みエイリアンセル */
   .cell.placed-alien{background:var(--red);}
+  /* 発見・確保したエイリアンセル（配置時と同じ赤地で「捕獲」を示す）*/
+  .cell.captured{background:var(--red);}
 
   @keyframes found{0%{transform:scale(.2) rotate(-22deg);}55%{transform:scale(1.22) rotate(7deg);}100%{transform:scale(1) rotate(0);}}
   @keyframes revealPop{0%{transform:scale(.3);opacity:0;}60%{transform:scale(1.16);opacity:1;}100%{transform:scale(1);opacity:1;}}
@@ -339,8 +342,15 @@ function fresh(){return{phase:"intro",boards:[emptyBoard(),emptyBoard()],attacke
   alienSeed:Math.floor(Math.random()*5)};}
 function emptyBoard(){return{aliens:[],hits:{},pings:{},alienType:{}};}
 
-/* 距離→色（①パレット）*/
-function distColor(d){ if(d<=1)return"#cf3f22"; if(d<=3)return"#b87f18"; return"#2c6868"; }
+/* 距離→色（4段階）1=すぐ近く 2=お！ 3=まぁまぁ 4+=遠い */
+function distColor(d){ if(d<=1)return"#cf3f22"; if(d===2)return"#e07a1e"; if(d===3)return"#b87f18"; return"#0f2e2e"; }
+/* 退色クリーム地のセル上で読みやすい数字色（同系の濃い版）*/
+function distInk(d){
+  if(d<=1)return"#a52d12";  // すぐ近く：濃い朱
+  if(d===2)return"#c45a0e"; // お！：濃いオレンジ
+  if(d===3)return"#8a5f10"; // まぁまぁ：濃い黄土
+  return"#0f2e2e";          // 遠い：濃ティール
+}
 
 /* ════════ レンダリング ════════ */
 const app=document.getElementById("app");
@@ -479,8 +489,8 @@ function renderPlay(){
   app.innerHTML="";
   const pips=Array.from({length:PINGS},(_,i)=>`<span class="pip ${i<PINGS-S.pingsLeft?'spent':''}"></span>`).join("");
   const s=el(`<div class="screen">
-    <div class="tag" style="margin:2px auto 6px"><span>STEP 2 · スキャン</span></div>
-    <h1 class="ttl" style="font-size:28px">プレイヤー ${S.attacker+1} のターン</h1>
+    <div class="tag" style="margin:2px auto 6px;background:${t.accent};color:var(--ink)"><span>STEP 2 · スキャン</span></div>
+    <h1 class="ttl" style="font-size:28px;color:${t.accent};-webkit-text-stroke:1.5px var(--ink);text-shadow:3px 3px 0 var(--ink)">プレイヤー ${S.attacker+1} のターン</h1>
     <div class="sub" style="color:var(--cream);text-shadow:1px 1px 0 var(--ink)">ねらうは プレイヤー ${2-S.attacker}（${dt.name}）</div>
     <div class="hud">
       <div class="stat"><div class="lbl">残りスキャン</div><div class="val">${pips}</div></div>
@@ -489,9 +499,10 @@ function renderPlay(){
     <div class="grid-mat"><div class="grid" id="grid" style="grid-template-columns:repeat(${SIZE},1fr)"></div></div>
     <div class="msg" id="msg"></div>
     <div class="legend">
-      <div class="it"><span class="sw" style="background:#cf3f22">0</span>至近</div>
-      <div class="it"><span class="sw" style="background:#e0a52e">2-3</span>近い</div>
-      <div class="it"><span class="sw" style="background:#3d8a8a">4+</span>遠い</div>
+      <div class="it"><span class="sw" style="background:#cf3f22;color:var(--cream)">1</span>すぐ近く</div>
+      <div class="it"><span class="sw" style="background:#e07a1e;color:var(--cream)">2</span>お！</div>
+      <div class="it"><span class="sw" style="background:#b87f18;color:var(--cream)">3</span>まぁまぁ</div>
+      <div class="it"><span class="sw" style="background:#0f2e2e;color:var(--cream)">4+</span>遠い</div>
       <div class="it" style="width:100%;justify-content:center;font-size:13px;opacity:.8">ドットの数＝近くに複数いる</div>
     </div>
   </div>`);
@@ -502,17 +513,18 @@ function renderPlay(){
     const isAlien=def.aliens.some(a=>a.r===r&&a.c===c);
     if(def.hits[k]){
       const isNew=S.lastResult&&S.lastResult.kind==="hit"&&S.lastResult.key===k;
+      b.classList.add("captured");
       if(isNew)b.classList.add("found");
       b.innerHTML=alienSVG(def.alienType[k]??0);
     }else if(S.reveal&&isAlien){
-      b.classList.add("reveal");b.style.opacity=".96";b.innerHTML=alienSVG(def.alienType[k]??0);
+      b.classList.add("captured","reveal");b.style.opacity=".96";b.innerHTML=alienSVG(def.alienType[k]??0);
     }else if(def.pings[k]!==undefined){
       b.classList.add("ping");
       const dists=def.pings[k].dists||[];const minD=dists[0];
       if(dists.length>1){
         const dd=dists.map(d=>`<span style="background:${distColor(d)}"></span>`).join("");
-        b.innerHTML=`<div class="dist-wrap"><span class="dist">${minD}</span><div class="dist-dots">${dd}</div></div>`;
-      }else b.innerHTML=`<span class="dist">${minD}</span>`;
+        b.innerHTML=`<div class="dist-wrap"><span class="dist" style="color:${distInk(minD)}">${minD}</span><div class="dist-dots">${dd}</div></div>`;
+      }else b.innerHTML=`<span class="dist" style="color:${distInk(minD)}">${minD}</span>`;
     }else b.innerHTML=houseSVG();
     if(!S.reveal&&!def.hits[k]&&def.pings[k]===undefined)b.onclick=()=>fire(r,c);
     grid.appendChild(b);
