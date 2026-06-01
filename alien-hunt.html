@@ -660,9 +660,13 @@ function renderPlay(){
       b.classList.add("ping");
       const pg=def.pings[k];
       const dists=pg.dists||[];const minD=dists[0];
-      // 表示ルール：1-2は常時 / 3以上は撃った当ターンのみ / それ以降は薄れて非表示
-      const isCurrentTurn=(pg.turn===S.turnNo);
-      const show = (minD<=2) || isCurrentTurn;
+      // 表示ルールは2層。
+      // 層1（常時）：距離が「圏外しきい値 = floor(SIZE×0.7)」を超えたら最初からドット。
+      // 層2（残り1体）：さらに厳しく。7×7以下は2まで／8×8以上は3まで表示。
+      const farMax  = Math.round(SIZE*0.7);                 // これを超えたら常にドット（7→5, 9→6, 11→8）
+      const lastOneLeft = (ALIENS - found) <= 1;
+      const keepMax = lastOneLeft ? (SIZE<=7 ? 2 : 3) : farMax;
+      const show = (minD<=keepMax);
       if(show){
         if(dists.length>1){
           const dd=dists.map(d=>`<span style="background:${distColor(d)}"></span>`).join("");
